@@ -1,0 +1,33 @@
+{
+  "name": "Example Product Test",
+  "description": "Test product for demonstration purposes",
+  "trackerType": "price",
+  "notifyOn": "decrease",
+  "threshold": {
+    "type": "relative",
+    "value": 5
+  },
+  "checkInterval": "0 */6 * * *",
+  "sources": [
+    {
+      "url": "https://example.com/product",
+      "storeName": "Example Store",
+      "selector": ".price",
+      "selectorType": "css"
+    }
+  ],
+  "notifications": [
+    {
+      "notifierType": "email",
+      "config": {
+        "host": "smtp.gmail.com",
+        "port": 587,
+        "secure": false,
+        "user": "your-email@gmail.com",
+        "pass": "your-app-password",
+        "from": "Price Tracker <your-email@gmail.com>",
+        "to": "notifications@example.com"
+      }
+    }
+  ]
+}
