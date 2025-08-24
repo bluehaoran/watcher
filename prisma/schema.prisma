@@ -1,0 +1,149 @@
+// prisma/schema.prisma
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./tracker.db"
+}
+
+// A product can have multiple sources (URLs) to track
+model Product {
+  id            String   @id @default(uuid())
+  name          String   // User-editable product name
+  description   String?  // Optional description
+  trackerType   String   // 'price', 'version', 'number'
+  
+  // Notification rules (apply to all sources)
+  notifyOn      String   @default("any_change") // 'any_change', 'decrease', 'increase'
+  threshold     Json?    // {type: 'absolute'|'relative', value: number}
+  
+  // Schedule
+  checkInterval String   @default("0 0 * * *") // Cron expression
+  lastChecked   DateTime?
+  nextCheck     DateTime?
+  
+  // Status
+  isActive      Boolean  @default(true)
+  isPaused      Boolean  @default(false)
+  
+  // Best deal tracking
+  bestSourceId  String?  // ID of source with best current value
+  bestValue     Json?    // Best current value across all sources
+  
+  // Metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  sources       Source[]
+  notifications NotificationConfig[]
+  comparisons   PriceComparison[]
+}
+
+// Each source is a URL where the product can be found
+model Source {
+  id            String   @id @default(uuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Source information
+  url           String
+  storeName     String?  // Auto-detected or user-provided
+  title         String   // Auto-extracted page title
+  
+  // Selector information
+  selector      String   // CSS selector or XPath
+  selectorType  String   @default("css") // 'css' or 'xpath'
+  
+  // Values
+  originalValue Json?    // Parsed original value
+  currentValue  Json?    // Parsed current value
+  originalText  String?  // Raw original text
+  currentText   String?  // Raw current text
+  
+  // Source-specific status
+  isActive      Boolean  @default(true)
+  lastChecked   DateTime?
+  errorCount    Int      @default(0)
+  lastError     String?
+  
+  // Metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  history       PriceHistory[]
+  falsePositives FalsePositive[]
+  
+  @@unique([productId, url])
+}
+
+// Track price comparisons across sources
+model PriceComparison {
+  id          String   @id @default(uuid())
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  
+  // Comparison data
+  sources     Json     // Array of {sourceId, value, storeName}
+  bestSourceId String  // Source with best value
+  bestValue   Json     // Best value
+  worstValue  Json     // Worst value
+  avgValue    Json     // Average value (for prices)
+  
+  timestamp   DateTime @default(now())
+  
+  @@index([productId, timestamp])
+}
+
+model NotificationConfig {
+  id           String   @id @default(uuid())
+  productId    String
+  product      Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  notifierType String   // 'email', 'discord', etc.
+  config       Json     // Plugin-specific configuration
+  isEnabled    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+}
+
+model PriceHistory {
+  id        String   @id @default(uuid())
+  sourceId  String
+  source    Source   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  value     Json
+  text      String
+  timestamp DateTime @default(now())
+  
+  @@index([sourceId, timestamp])
+}
+
+model FalsePositive {
+  id           String   @id @default(uuid())
+  sourceId     String
+  source       Source  @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  detectedText String
+  detectedValue Json
+  actualText   String?
+  htmlContext  String   // Surrounding HTML for debugging
+  screenshot   String?  // Base64 or file path
+  notes        String?
+  timestamp    DateTime @default(now())
+}
+
+model NotificationLog {
+  id          String   @id @default(uuid())
+  productId   String
+  type        String   // 'email', 'discord', etc.
+  status      String   // 'sent', 'failed', 'actioned'
+  action      String?  // 'dismissed', 'false_positive', 'purchased'
+  error       String?
+  timestamp   DateTime @default(now())
+  actionedAt  DateTime?
+}
+
+model SystemSettings {
+  key   String @id
+  value Json
+}
