@@ -8,18 +8,18 @@ A containerized price/version/number tracking application that monitors web page
 - **Plugin-Based Architecture**: Extensible tracker and notifier plugins
 - **Smart Element Detection**: Visual element picker with confidence ranking
 - **Multiple Tracker Types**:
-  - =∞ Price tracking with multi-currency support
+  - =ÔøΩ Price tracking with multi-currency support
   - = Semantic version tracking (1.20.1, 2.0.0-beta)
-  - =  Generic number tracking (stock, scores, ratings)
+  - =ÔøΩ Generic number tracking (stock, scores, ratings)
 - **Notification Systems**:
-  - =Á Email notifications via SMTP
-  - =¨ Discord notifications via webhooks
+  - =ÔøΩ Email notifications via SMTP
+  - =ÔøΩ Discord notifications via webhooks
 - **Cross-Source Comparison**: Find the best deals automatically
 - **Flexible Scheduling**: Custom cron expressions for check intervals
 - **Web Interface**: Dashboard, setup wizard, and element scanner
 - **Docker Ready**: Easy deployment with Docker Compose
 
-## =Ä Quick Start
+## =ÔøΩ Quick Start
 
 ### Using Docker (Recommended)
 
@@ -77,7 +77,7 @@ npm run build
 npm start
 ```
 
-## =  Architecture
+## =ÔøΩ Architecture
 
 The application follows a modular plugin-based architecture:
 
@@ -99,7 +99,7 @@ NODE_ENV=production docker-compose up -d
 docker-compose logs -f price-tracker
 ```
 
-## =÷ Usage
+## =ÔøΩ Usage
 
 1. **Add a Product**: Visit the dashboard and click "Add Product"
 2. **Configure Sources**: Add URLs where the product can be found
@@ -113,7 +113,7 @@ The application will automatically:
 - Find the best deals across sources
 - Send notifications when thresholds are met
 
-## =‡ Configuration
+## =ÔøΩ Configuration
 
 Key environment variables:
 
@@ -130,11 +130,25 @@ See `.env.example` for complete configuration options.
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Submit a pull request
+4. Ensure your changes are compatible with GPL v3 requirements
+5. Submit a pull request
 
-## =ƒ License
+## =ÔøΩ License
 
-MIT License - see LICENSE file for details.
+This project is licensed under the GNU General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+
+### GPL v3 Requirements
+
+This software is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+**Key implications:**
+- ‚úÖ Free to use, modify, and distribute
+- ‚úÖ Source code must remain available
+- ‚úÖ Derivative works must also be GPL v3
+- ‚úÖ Commercial use allowed with GPL v3 compliance
+- ‚ùå Cannot be incorporated into proprietary software
+
+For commercial licensing options or questions about GPL v3 compliance, please open an issue.
 
 ---
 
