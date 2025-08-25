@@ -1,4 +1,4 @@
-import { prisma } from './database';
+import { db } from './database';
 import { logger } from '../utils/logger';
 import { WebScraper } from './scraper';
 import { PluginManager } from '../plugins/PluginManager';
@@ -62,13 +62,10 @@ export class Tracker {
 
         if (result.success) {
           // Update last checked time
-          await prisma.source.update({
-            where: { id: source.id },
-            data: {
-              lastChecked: new Date(),
-              errorCount: 0,
-              lastError: null,
-            }
+          await db.sources.update(source.id, {
+            lastChecked: new Date().toISOString(),
+            errorCount: 0,
+            lastError: undefined,
           });
         }
 
@@ -77,20 +74,16 @@ export class Tracker {
         
         // Update error count
         const errorCount = source.errorCount + 1;
-        await prisma.source.update({
-          where: { id: source.id },
-          data: {
-            errorCount,
-            lastError: error instanceof Error ? error.message : String(error),
-            lastChecked: new Date(),
-          }
+        await db.sources.update(source.id, {
+          errorCount,
+          lastError: error instanceof Error ? error.message : String(error),
+          lastChecked: new Date().toISOString(),
         });
 
         // Disable source if too many errors
         if (errorCount >= config.retryAttempts) {
-          await prisma.source.update({
-            where: { id: source.id },
-            data: { isActive: false }
+          await db.sources.update(source.id, {
+            isActive: false
           });
           
           logger.warn(`Disabled source due to repeated errors: ${source.url}`);
@@ -106,12 +99,9 @@ export class Tracker {
     }
 
     // Update product's last checked time and next check time
-    await prisma.product.update({
-      where: { id: productId },
-      data: {
-        lastChecked: new Date(),
-        nextCheck: this.calculateNextCheck(product.checkInterval),
-      }
+    await db.products.update(productId, {
+      lastChecked: new Date().toISOString(),
+      nextCheck: this.calculateNextCheck(product.checkInterval),
     });
 
     // Update best deal across sources
@@ -131,7 +121,7 @@ export class Tracker {
 
     for (const product of products) {
       // Check if it's time to check this product
-      if (product.nextCheck && product.nextCheck > new Date()) {
+      if (product.nextCheck && new Date(product.nextCheck) > new Date()) {
         logger.debug(`Skipping product ${product.name} - not due for check yet`);
         continue;
       }
@@ -165,9 +155,8 @@ export class Tracker {
 
     // Update page title if empty
     if (!source.title && scrapeResult.title) {
-      await prisma.source.update({
-        where: { id: source.id },
-        data: { title: scrapeResult.title }
+      await db.sources.update(source.id, {
+        title: scrapeResult.title
       });
     }
 
@@ -177,27 +166,23 @@ export class Tracker {
       throw new Error(`Failed to parse content from ${source.url}: low confidence or invalid format`);
     }
 
-    const oldValue = source.currentValue ? JSON.parse(source.currentValue) : null;
+    const oldValue = source.currentValue || null;
     const newValue = parseResult.value;
 
     // Store the new value and text
-    await prisma.source.update({
-      where: { id: source.id },
-      data: {
-        currentValue: JSON.stringify(newValue),
-        currentText: scrapeResult.content,
-        originalValue: oldValue ? undefined : JSON.stringify(newValue),
-        originalText: source.originalText || scrapeResult.content,
-      }
+    await db.sources.update(source.id, {
+      currentValue: newValue,
+      currentText: scrapeResult.content,
+      originalValue: oldValue ? undefined : newValue,
+      originalText: source.originalText || scrapeResult.content,
     });
 
     // Record in history
-    await prisma.priceHistory.create({
-      data: {
-        sourceId: source.id,
-        value: JSON.stringify(newValue),
-        text: scrapeResult.content || '',
-      }
+    await db.history.create({
+      sourceId: source.id,
+      value: newValue,
+      text: scrapeResult.content || '',
+      timestamp: new Date().toISOString(),
     });
 
     // Check if value changed
@@ -246,13 +231,12 @@ export class Tracker {
         const result = await notifier.notify(event);
         
         // Log the notification
-        await prisma.notificationLog.create({
-          data: {
-            productId: product.id,
-            type: notificationConfig.notifierType,
-            status: result.success ? 'sent' : 'failed',
-            error: result.error || null,
-          }
+        await db.notificationLogs.create({
+          productId: product.id,
+          type: notificationConfig.notifierType,
+          status: result.success ? 'sent' : 'failed',
+          error: result.error || undefined,
+          timestamp: new Date().toISOString(),
         });
 
         if (result.success) {
@@ -326,9 +310,9 @@ export class Tracker {
     // If multiple sources, build comparison data
     if (sources.length > 1) {
       const allSources = sources
-        .filter(s => s.currentValue)
-        .map(s => {
-          const value = JSON.parse(s.currentValue as string);
+        .filter((s: any) => s.currentValue)
+        .map((s: any) => {
+          const value = s.currentValue;
           const changed = changedSources.some(cs => cs.sourceId === s.id);
           
           return {
@@ -342,7 +326,7 @@ export class Tracker {
         });
 
       // Find best deal
-      const bestSource = allSources.reduce((best, current) => {
+      const bestSource = allSources.reduce((best: any, current: any) => {
         if (!best) return current;
         
         const comparison = tracker.compare(best.value, current.value);
@@ -358,7 +342,7 @@ export class Tracker {
       // Calculate savings for price tracking
       let savings;
       if (product.trackerType === 'price' && bestSource) {
-        const worstPrice = Math.max(...allSources.map(s => s.value.amount || 0));
+        const worstPrice = Math.max(...allSources.map((s: any) => s.value.amount || 0));
         const bestPrice = bestSource.value.amount || 0;
         
         if (worstPrice > bestPrice) {
@@ -426,14 +410,14 @@ export class Tracker {
     }
   }
 
-  private calculateNextCheck(cronExpression: string): Date {
+  private calculateNextCheck(cronExpression: string): string {
     // Simple implementation - in a real app you'd use a proper cron parser
     const now = new Date();
     
     // Default to 24 hours from now
     const nextCheck = new Date(now.getTime() + 24 * 60 * 60 * 1000);
     
-    return nextCheck;
+    return nextCheck.toISOString();
   }
 
   private delay(ms: number): Promise<void> {

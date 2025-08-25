@@ -16,12 +16,9 @@
     "test:ui": "vitest --ui",
     "lint": "eslint src --ext .ts",
     "format": "prettier --write \"src/**/*.ts\"",
-    "db:migrate": "prisma migrate dev",
-    "db:generate": "prisma generate",
-    "db:studio": "prisma studio"
+    "migrate": "tsx scripts/migrate-from-prisma.ts"
   },
   "dependencies": {
-    "@prisma/client": "^5.18.0",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "express-rate-limit": "^7.3.1",
@@ -45,7 +42,6 @@
     "@vitest/ui": "^3.2.4",
     "eslint": "^9.0.0",
     "prettier": "^3.3.3",
-    "prisma": "^5.18.0",
     "tsx": "^4.16.2",
     "typescript": "^5.5.4",
     "vitest": "^3.2.4"

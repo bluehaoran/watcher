@@ -2,12 +2,8 @@ FROM node:22-alpine AS builder
 
 WORKDIR /app
 
-# Install Python and build tools for native dependencies
-RUN apk add --no-cache python3 make g++
-
 # Copy package files
 COPY package*.json ./
-COPY prisma ./prisma/
 
 # Install dependencies
 RUN npm ci
@@ -17,9 +13,6 @@ COPY . .
 
 # Build TypeScript
 RUN npm run build
-
-# Generate Prisma client
-RUN npx prisma generate
 
 # Production stage
 FROM node:22-alpine
@@ -44,7 +37,6 @@ WORKDIR /app
 COPY --from=builder /app/dist ./dist
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/package*.json ./
-COPY --from=builder /app/prisma ./prisma
 
 # Copy static files and templates
 COPY public ./public

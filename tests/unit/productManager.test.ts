@@ -5,31 +5,36 @@ import { ProductTestDataBuilder, CreateProductDataBuilder, SourceTestDataBuilder
 
 // Mock database - focus on behavior, not implementation details
 vi.mock('@/core/database', () => ({
-  prisma: {
-    product: {
+  db: {
+    products: {
       create: vi.fn(),
-      findUnique: vi.fn(),
+      findById: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
-    source: {
+    sources: {
       create: vi.fn(),
-      findUnique: vi.fn(),
+      findById: vi.fn(),
       findMany: vi.fn(),
       update: vi.fn(),
       delete: vi.fn(),
     },
-    priceHistory: {
+    history: {
       create: vi.fn(),
       findMany: vi.fn(),
     },
-    notificationConfig: {
+    notifications: {
       create: vi.fn(),
     },
-    $transaction: vi.fn(),
-    $connect: vi.fn(),
-    $disconnect: vi.fn(),
+    comparisons: {
+      create: vi.fn(),
+    },
+    getProductWithSources: vi.fn(),
+    getProductsWithSources: vi.fn(),
+    deleteProduct: vi.fn(),
+    deleteSource: vi.fn(),
+    transaction: vi.fn(),
   },
 }));
 
@@ -46,13 +51,13 @@ vi.mock('@/utils/logger', () => ({
 describe('ProductManager', () => {
   let productManager: ProductManager;
   let mockPluginManager: PluginManager;
-  let mockPrisma: any;
+  let mockDb: any;
 
   beforeEach(async () => {
     vi.clearAllMocks();
     
-    const { prisma } = await import('@/core/database');
-    mockPrisma = vi.mocked(prisma);
+    const { db } = await import('@/core/database');
+    mockDb = vi.mocked(db);
     
     // Mock plugin manager with realistic behavior
     mockPluginManager = {
@@ -82,14 +87,13 @@ describe('ProductManager', () => {
         .build();
 
       // Mock transaction behavior - focus on the outcome
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          product: { create: vi.fn().mockResolvedValue(expectedProduct) },
-          source: { create: vi.fn().mockResolvedValue(expectedProduct.sources[0]) },
-          notificationConfig: { create: vi.fn() }
-        };
-        return await callback(mockTx);
+      mockDb.transaction.mockImplementation(async (callback) => {
+        return await callback();
       });
+      
+      mockDb.products.create.mockResolvedValue(expectedProduct);
+      mockDb.sources.create.mockResolvedValue(expectedProduct.sources[0]);
+      mockDb.notifications.create.mockResolvedValue({});
 
       // Act
       const result = await productManager.createProduct(createData);
@@ -98,7 +102,9 @@ describe('ProductManager', () => {
       expect(result).toBeDefined();
       expect(result.name).toBe('Gaming Laptop');
       expect(result.trackerType).toBe('price');
-      expect(mockPrisma.$transaction).toHaveBeenCalled();
+      expect(mockDb.transaction).toHaveBeenCalled();
+      expect(mockDb.products.create).toHaveBeenCalled();
+      expect(mockDb.sources.create).toHaveBeenCalled();
     });
 
     it('should create product even with unknown tracker type (no validation implemented)', async () => {
@@ -114,14 +120,13 @@ describe('ProductManager', () => {
 
       mockPluginManager.getTracker = vi.fn().mockReturnValue(null);
 
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          product: { create: vi.fn().mockResolvedValue(expectedProduct) },
-          source: { create: vi.fn() },
-          notificationConfig: { create: vi.fn() }
-        };
-        return await callback(mockTx);
+      mockDb.transaction.mockImplementation(async (callback) => {
+        return await callback();
       });
+      
+      mockDb.products.create.mockResolvedValue(expectedProduct);
+      mockDb.sources.create.mockResolvedValue({});
+      mockDb.notifications.create.mockResolvedValue({});
 
       // Act - should succeed because validation is not implemented
       const result = await productManager.createProduct(createData);
@@ -141,14 +146,13 @@ describe('ProductManager', () => {
         .withSources([])
         .build();
 
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          product: { create: vi.fn().mockResolvedValue(expectedProduct) },
-          source: { create: vi.fn() },
-          notificationConfig: { create: vi.fn() }
-        };
-        return await callback(mockTx);
+      mockDb.transaction.mockImplementation(async (callback) => {
+        return await callback();
       });
+      
+      mockDb.products.create.mockResolvedValue(expectedProduct);
+      mockDb.sources.create.mockResolvedValue({});
+      mockDb.notifications.create.mockResolvedValue({});
 
       // Act - should succeed because validation is not implemented
       const result = await productManager.createProduct(createData);
@@ -169,14 +173,13 @@ describe('ProductManager', () => {
         .withSource('https://example.com/product')
         .build();
 
-      mockPrisma.$transaction.mockImplementation(async (callback) => {
-        const mockTx = {
-          product: { create: vi.fn().mockResolvedValue(expectedProduct) },
-          source: { create: vi.fn() },
-          notificationConfig: { create: vi.fn() }
-        };
-        return await callback(mockTx);
+      mockDb.transaction.mockImplementation(async (callback) => {
+        return await callback();
       });
+      
+      mockDb.products.create.mockResolvedValue(expectedProduct);
+      mockDb.sources.create.mockResolvedValue({});
+      mockDb.notifications.create.mockResolvedValue({});
 
       // Act - should succeed because validation is not implemented
       const result = await productManager.createProduct(createData);
@@ -195,7 +198,7 @@ describe('ProductManager', () => {
         .withSource('https://example.com/product')
         .build();
 
-      mockPrisma.product.findUnique.mockResolvedValue(expectedProduct);
+      mockDb.getProductWithSources.mockResolvedValue(expectedProduct);
 
       // Act
       const result = await productManager.getProduct('test-product-1');
@@ -205,16 +208,12 @@ describe('ProductManager', () => {
       expect(result.name).toBe('Test Product');
       expect(result.sources).toBeDefined();
       expect(result.notifications).toBeDefined();
-      expect(mockPrisma.product.findUnique).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'test-product-1' }
-        })
-      );
+      expect(mockDb.getProductWithSources).toHaveBeenCalledWith('test-product-1');
     });
 
     it('should return null for non-existent product', async () => {
       // Arrange
-      mockPrisma.product.findUnique.mockResolvedValue(null);
+      mockDb.getProductWithSources.mockResolvedValue(null);
 
       // Act
       const result = await productManager.getProduct('non-existent');
@@ -232,7 +231,10 @@ describe('ProductManager', () => {
         new ProductTestDataBuilder().withId('test-product-2').withName('Product 2').build()
       ];
 
-      mockPrisma.product.findMany.mockResolvedValue(expectedProducts);
+      mockDb.products.findMany.mockResolvedValue(expectedProducts);
+      mockDb.getProductWithSources.mockImplementation((id) => 
+        expectedProducts.find(p => p.id === id)
+      );
 
       // Act
       const result = await productManager.getProducts();
@@ -241,9 +243,11 @@ describe('ProductManager', () => {
       expect(result).toHaveLength(2);
       expect(result[0].name).toBe('Product 1');
       expect(result[1].name).toBe('Product 2');
-      expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
+      expect(mockDb.products.findMany).toHaveBeenCalledWith(
+        expect.any(Function),
         expect.objectContaining({
-          where: expect.any(Object)
+          sortBy: 'createdAt',
+          sortOrder: 'desc'
         })
       );
     });
@@ -254,7 +258,10 @@ describe('ProductManager', () => {
         new ProductTestDataBuilder().withActiveStatus(false).build()
       ];
 
-      mockPrisma.product.findMany.mockResolvedValue(inactiveProducts);
+      mockDb.products.findMany.mockResolvedValue(inactiveProducts);
+      mockDb.getProductWithSources.mockImplementation((id) => 
+        inactiveProducts.find(p => p.id === id)
+      );
 
       // Act
       const result = await productManager.getProducts({ isActive: false });
@@ -262,10 +269,9 @@ describe('ProductManager', () => {
       // Assert
       expect(result).toHaveLength(1);
       expect(result[0].isActive).toBe(false);
-      expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ isActive: false })
-        })
+      expect(mockDb.products.findMany).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.any(Object)
       );
     });
 
@@ -275,7 +281,10 @@ describe('ProductManager', () => {
         new ProductTestDataBuilder().withTrackerType('version').build()
       ];
 
-      mockPrisma.product.findMany.mockResolvedValue(versionProducts);
+      mockDb.products.findMany.mockResolvedValue(versionProducts);
+      mockDb.getProductWithSources.mockImplementation((id) => 
+        versionProducts.find(p => p.id === id)
+      );
 
       // Act
       const result = await productManager.getProducts({ trackerType: 'version' });
@@ -283,10 +292,9 @@ describe('ProductManager', () => {
       // Assert
       expect(result).toHaveLength(1);
       expect(result[0].trackerType).toBe('version');
-      expect(mockPrisma.product.findMany).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: expect.objectContaining({ trackerType: 'version' })
-        })
+      expect(mockDb.products.findMany).toHaveBeenCalledWith(
+        expect.any(Function),
+        expect.any(Object)
       );
     });
   });
@@ -299,7 +307,7 @@ describe('ProductManager', () => {
         .withName('Updated Product Name')
         .build();
 
-      mockPrisma.product.update.mockResolvedValue(updatedProduct);
+      mockDb.products.update.mockResolvedValue(updatedProduct);
 
       // Act
       const result = await productManager.updateProduct('test-product-1', updateData);
@@ -307,11 +315,9 @@ describe('ProductManager', () => {
       // Assert - focus on the outcome
       expect(result).toBeDefined();
       expect(result.name).toBe('Updated Product Name');
-      expect(mockPrisma.product.update).toHaveBeenCalledWith(
-        expect.objectContaining({
-          where: { id: 'test-product-1' },
-          data: expect.objectContaining(updateData)
-        })
+      expect(mockDb.products.update).toHaveBeenCalledWith(
+        'test-product-1',
+        expect.objectContaining(updateData)
       );
     });
 
@@ -323,7 +329,7 @@ describe('ProductManager', () => {
         .build();
       
       mockPluginManager.getTracker = vi.fn().mockReturnValue(null);
-      mockPrisma.product.update.mockResolvedValue(updatedProduct);
+      mockDb.products.update.mockResolvedValue(updatedProduct);
 
       // Act - should succeed because validation is not implemented
       const result = await productManager.updateProduct('test-product-1', updateData);
@@ -337,22 +343,19 @@ describe('ProductManager', () => {
   describe('deleteProduct', () => {
     it('should delete product successfully', async () => {
       // Arrange
-      const deletedProduct = new ProductTestDataBuilder().build();
-      mockPrisma.product.delete.mockResolvedValue(deletedProduct);
+      mockDb.deleteProduct.mockResolvedValue(undefined);
 
       // Act
       const result = await productManager.deleteProduct('test-product-1');
 
       // Assert - deleteProduct doesn't return a value
       expect(result).toBeUndefined();
-      expect(mockPrisma.product.delete).toHaveBeenCalledWith({
-        where: { id: 'test-product-1' }
-      });
+      expect(mockDb.deleteProduct).toHaveBeenCalledWith('test-product-1');
     });
 
     it('should propagate delete errors (no error handling implemented)', async () => {
       // Arrange
-      mockPrisma.product.delete.mockRejectedValue(new Error('Record not found'));
+      mockDb.deleteProduct.mockRejectedValue(new Error('Record not found'));
 
       // Act & Assert - should throw because error handling is not implemented
       await expect(productManager.deleteProduct('non-existent'))
@@ -375,7 +378,7 @@ describe('ProductManager', () => {
         .withStoreName('New Store')
         .build();
 
-      mockPrisma.source.create.mockResolvedValue(newSource);
+      mockDb.sources.create.mockResolvedValue(newSource);
 
       // Act
       const result = await productManager.addSourceToProduct('test-product-1', sourceData);
@@ -384,13 +387,13 @@ describe('ProductManager', () => {
       expect(result).toBeDefined();
       expect(result.url).toBe('https://example.com/new-source');
       expect(result.storeName).toBe('New Store');
-      expect(mockPrisma.source.create).toHaveBeenCalledWith(
+      expect(mockDb.sources.create).toHaveBeenCalledWith(
         expect.objectContaining({
-          data: expect.objectContaining({
-            productId: 'test-product-1',
-            url: 'https://example.com/new-source',
-            storeName: 'New Store'
-          })
+          productId: 'test-product-1',
+          url: 'https://example.com/new-source',
+          storeName: 'New Store',
+          errorCount: 0,
+          isActive: true
         })
       );
     });
@@ -403,9 +406,9 @@ describe('ProductManager', () => {
         storeName: 'Existing Store'
       };
 
-      // Mock Prisma unique constraint error
-      const prismaError = new Error('Unique constraint failed');
-      mockPrisma.source.create.mockRejectedValue(prismaError);
+      // Mock FileStore unique constraint error
+      const fileStoreError = new Error('Unique constraint failed');
+      mockDb.sources.create.mockRejectedValue(fileStoreError);
 
       // Act & Assert
       await expect(
@@ -422,33 +425,29 @@ describe('ProductManager', () => {
         .withSource('https://store2.com/product')
         .build();
 
-      // Mock sources with different prices - currentValue must be JSON strings
-      productWithSources.sources[0].currentValue = JSON.stringify({ amount: 99.99, currency: 'USD' });
-      productWithSources.sources[1].currentValue = JSON.stringify({ amount: 89.99, currency: 'USD' });
+      // Mock sources with different prices - currentValue is now direct objects
+      productWithSources.sources[0].currentValue = { amount: 99.99, currency: 'USD' };
+      productWithSources.sources[1].currentValue = { amount: 89.99, currency: 'USD' };
 
-      mockPrisma.product.findUnique.mockResolvedValue(productWithSources);
-      mockPrisma.product.update.mockResolvedValue({
+      mockDb.getProductWithSources.mockResolvedValue(productWithSources);
+      mockDb.products.update.mockResolvedValue({
         ...productWithSources,
         bestSourceId: 'source-2',
-        bestValue: JSON.stringify({ amount: 89.99, currency: 'USD' })
+        bestValue: { amount: 89.99, currency: 'USD' }
       });
       
-      // Mock priceComparison create
-      mockPrisma.priceComparison = {
-        create: vi.fn().mockResolvedValue({})
-      };
+      // Mock comparisons create
+      mockDb.comparisons.create.mockResolvedValue({});
 
       // Act
       await productManager.updateBestDeal('test-product-1');
 
       // Assert - test that best deal logic works
-      expect(mockPrisma.product.update).toHaveBeenCalledWith(
+      expect(mockDb.products.update).toHaveBeenCalledWith(
+        'test-product-1',
         expect.objectContaining({
-          where: { id: 'test-product-1' },
-          data: expect.objectContaining({
-            bestSourceId: expect.any(String),
-            bestValue: expect.any(String)
-          })
+          bestSourceId: expect.any(String),
+          bestValue: expect.any(Object)
         })
       );
     });
@@ -459,18 +458,18 @@ describe('ProductManager', () => {
         .withSources([])
         .build();
 
-      mockPrisma.product.findUnique.mockResolvedValue(productWithoutSources);
+      mockDb.getProductWithSources.mockResolvedValue(productWithoutSources);
 
       // Act
       await productManager.updateBestDeal('test-product-1');
 
       // Assert - should not update product when no sources (implementation doesn't handle this case)
-      expect(mockPrisma.product.update).not.toHaveBeenCalled();
+      expect(mockDb.products.update).not.toHaveBeenCalled();
     });
 
     it('should handle non-existent product', async () => {
       // Arrange
-      mockPrisma.product.findUnique.mockResolvedValue(null);
+      mockDb.getProductWithSources.mockResolvedValue(null);
 
       // Act & Assert
       await expect(productManager.updateBestDeal('non-existent'))

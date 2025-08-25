@@ -1,6 +1,13 @@
-import { prisma } from './database';
+import { db } from './database';
 import { logger } from '../utils/logger';
 import { PluginManager } from '../plugins/PluginManager';
+import { 
+  CreateProduct, 
+  CreateSource, 
+  CreateNotificationConfig, 
+  UpdateProduct,
+  ProductWithSources
+} from '../types/models';
 
 export interface CreateProductData {
   name: string;
@@ -12,6 +19,7 @@ export interface CreateProductData {
   sources: Array<{
     url: string;
     storeName?: string;
+    title: string;
     selector: string;
     selectorType: string;
   }>;
@@ -38,44 +46,39 @@ export class ProductManager {
     const { sources, notifications, ...productData } = data;
 
     try {
-      const product = await prisma.$transaction(async (tx) => {
+      return await db.transaction(async () => {
         // Create the product
-        const newProduct = await tx.product.create({
-          data: {
-            ...productData,
-            threshold: data.threshold ? JSON.stringify(data.threshold) : undefined,
-          }
+        const product = await db.products.create({
+          ...productData,
+          isActive: true,
+          isPaused: false,
         });
 
         // Create sources
         for (const sourceData of sources) {
           const { storeName, ...rest } = sourceData;
-          await tx.source.create({
-            data: {
-              ...rest,
-              productId: newProduct.id,
-              storeName: storeName || this.extractDomainName(sourceData.url),
-              title: '', // Will be populated on first scrape
-            }
+          await db.sources.create({
+            ...rest,
+            productId: product.id,
+            storeName: storeName || this.extractDomainName(sourceData.url),
+            errorCount: 0,
+            isActive: true,
           });
         }
 
         // Create notification configs
         for (const notificationData of notifications) {
-          await tx.notificationConfig.create({
-            data: {
-              productId: newProduct.id,
-              notifierType: notificationData.notifierType,
-              config: JSON.stringify(notificationData.config),
-            }
+          await db.notifications.create({
+            productId: product.id,
+            notifierType: notificationData.notifierType,
+            config: notificationData.config,
+            isEnabled: true,
           });
         }
 
-        return newProduct;
+        logger.info(`Created product: ${product.name} (${product.id})`);
+        return product;
       });
-
-      logger.info(`Created product: ${product.name} (${product.id})`);
-      return product;
 
     } catch (error) {
       logger.error('Failed to create product:', error);
@@ -85,14 +88,11 @@ export class ProductManager {
 
   async updateProduct(productId: string, data: UpdateProductData) {
     try {
-      const product = await prisma.product.update({
-        where: { id: productId },
-        data: {
-          ...data,
-          threshold: data.threshold ? JSON.stringify(data.threshold) : undefined,
-          updatedAt: new Date(),
-        }
-      });
+      const product = await db.products.update(productId, data);
+      
+      if (!product) {
+        throw new Error(`Product not found: ${productId}`);
+      }
 
       logger.info(`Updated product: ${product.name} (${productId})`);
       return product;
@@ -105,31 +105,17 @@ export class ProductManager {
 
   async deleteProduct(productId: string) {
     try {
-      await prisma.product.delete({
-        where: { id: productId }
-      });
-
+      await db.deleteProduct(productId);
       logger.info(`Deleted product: ${productId}`);
-
     } catch (error) {
       logger.error(`Failed to delete product ${productId}:`, error);
       throw error;
     }
   }
 
-  async getProduct(productId: string) {
+  async getProduct(productId: string): Promise<ProductWithSources | null> {
     try {
-      return await prisma.product.findUnique({
-        where: { id: productId },
-        include: {
-          sources: true,
-          notifications: true,
-          comparisons: {
-            orderBy: { timestamp: 'desc' },
-            take: 1
-          }
-        }
-      });
+      return await db.getProductWithSources(productId);
     } catch (error) {
       logger.error(`Failed to get product ${productId}:`, error);
       throw error;
@@ -141,33 +127,35 @@ export class ProductManager {
     trackerType?: string;
     limit?: number;
     offset?: number;
-  } = {}) {
+  } = {}): Promise<ProductWithSources[]> {
     try {
-      const where: any = {};
-      
-      if (options.isActive !== undefined) {
-        where.isActive = options.isActive;
-      }
-      
-      if (options.trackerType) {
-        where.trackerType = options.trackerType;
-      }
+      const filter = (product: any) => {
+        if (options.isActive !== undefined && product.isActive !== options.isActive) {
+          return false;
+        }
+        if (options.trackerType && product.trackerType !== options.trackerType) {
+          return false;
+        }
+        return true;
+      };
 
-      return await prisma.product.findMany({
-        where,
-        include: {
-          sources: true,
-          notifications: true,
-          comparisons: {
-            orderBy: { timestamp: 'desc' },
-            take: 1
-          }
-        },
-        take: options.limit,
-        skip: options.offset,
-        orderBy: { createdAt: 'desc' }
+      const products = await db.products.findMany(filter, {
+        limit: options.limit,
+        offset: options.offset,
+        sortBy: 'createdAt',
+        sortOrder: 'desc'
       });
 
+      // Get full products with sources and notifications
+      const result: ProductWithSources[] = [];
+      for (const product of products) {
+        const productWithSources = await db.getProductWithSources(product.id);
+        if (productWithSources) {
+          result.push(productWithSources);
+        }
+      }
+
+      return result;
     } catch (error) {
       logger.error('Failed to get products:', error);
       throw error;
@@ -181,13 +169,13 @@ export class ProductManager {
     selectorType: string;
   }) {
     try {
-      const source = await prisma.source.create({
-        data: {
-          ...sourceData,
-          productId,
-          storeName: sourceData.storeName || this.extractDomainName(sourceData.url),
-          title: '', // Will be populated on first scrape
-        }
+      const source = await db.sources.create({
+        ...sourceData,
+        productId,
+        storeName: sourceData.storeName || this.extractDomainName(sourceData.url),
+        title: '', // Will be populated on first scrape
+        errorCount: 0,
+        isActive: true,
       });
 
       logger.info(`Added source ${source.url} to product ${productId}`);
@@ -207,13 +195,11 @@ export class ProductManager {
     isActive?: boolean;
   }) {
     try {
-      const source = await prisma.source.update({
-        where: { id: sourceId },
-        data: {
-          ...data,
-          updatedAt: new Date(),
-        }
-      });
+      const source = await db.sources.update(sourceId, data);
+      
+      if (!source) {
+        throw new Error(`Source not found: ${sourceId}`);
+      }
 
       logger.info(`Updated source: ${sourceId}`);
       return source;
@@ -226,12 +212,8 @@ export class ProductManager {
 
   async removeSourceFromProduct(sourceId: string) {
     try {
-      await prisma.source.delete({
-        where: { id: sourceId }
-      });
-
+      await db.deleteSource(sourceId);
       logger.info(`Removed source: ${sourceId}`);
-
     } catch (error) {
       logger.error(`Failed to remove source ${sourceId}:`, error);
       throw error;
@@ -240,10 +222,7 @@ export class ProductManager {
 
   async updateBestDeal(productId: string) {
     try {
-      const product = await prisma.product.findUnique({
-        where: { id: productId },
-        include: { sources: true }
-      });
+      const product = await db.getProductWithSources(productId);
 
       if (!product) {
         throw new Error(`Product not found: ${productId}`);
@@ -261,7 +240,7 @@ export class ProductManager {
       for (const source of product.sources) {
         if (!source.currentValue || !source.isActive) continue;
 
-        const currentValue = JSON.parse(source.currentValue as string);
+        const currentValue = source.currentValue;
         
         if (!bestValue) {
           bestValue = currentValue;
@@ -290,12 +269,9 @@ export class ProductManager {
       }
 
       if (bestSource && bestValue) {
-        await prisma.product.update({
-          where: { id: productId },
-          data: {
-            bestSourceId: bestSource.id,
-            bestValue: JSON.stringify(bestValue),
-          }
+        await db.products.update(productId, {
+          bestSourceId: bestSource.id,
+          bestValue: bestValue,
         });
 
         // Create price comparison record
@@ -316,7 +292,7 @@ export class ProductManager {
       .filter(s => s.currentValue && s.isActive)
       .map(s => ({
         sourceId: s.id,
-        value: JSON.parse(s.currentValue),
+        value: s.currentValue,
         storeName: s.storeName
       }));
 
@@ -332,15 +308,14 @@ export class ProductManager {
 
     const bestSourceData = sourcesData.find(s => s.value.amount === bestValue);
 
-    await prisma.priceComparison.create({
-      data: {
-        productId,
-        sources: JSON.stringify(sourcesData),
-        bestSourceId: bestSourceData?.sourceId || '',
-        bestValue: JSON.stringify({ amount: bestValue }),
-        worstValue: JSON.stringify({ amount: worstValue }),
-        avgValue: JSON.stringify({ amount: avgValue }),
-      }
+    await db.comparisons.create({
+      productId,
+      sources: sourcesData,
+      bestSourceId: bestSourceData?.sourceId || '',
+      bestValue: { amount: bestValue },
+      worstValue: { amount: worstValue },
+      avgValue: { amount: avgValue },
+      timestamp: new Date().toISOString(),
     });
   }
 

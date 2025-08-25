@@ -15,6 +15,8 @@ pkgs.mkShell {
     php83Packages.composer
     yarn
     awscli2
+    playwright
+    playwright-test
 sqlite
 openssl
 prisma
