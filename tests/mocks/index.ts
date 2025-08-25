@@ -1,5 +1,9 @@
 import { vi } from 'vitest';
 
+// Re-export builders for backward compatibility
+export { ProductTestDataBuilder, CreateProductDataBuilder, SourceTestDataBuilder } from '../unit/builders/ProductTestBuilder';
+export { ScrapingResultBuilder, ElementMatchBuilder } from '../unit/builders/WebScraperTestBuilder';
+
 // Mock data factories
 export const mockProduct = {
   id: 'test-product-1',
