@@ -1,6 +1,6 @@
-import { ElementMatch } from '../plugins/base/TrackerPlugin.js';
-import { WebScraper, ElementInfo } from './scraper.js';
-import { logger } from '../utils/logger.js';
+import { ElementMatch } from '../plugins/base/TrackerPlugin';
+import { WebScraper, ElementInfo } from './scraper';
+import { logger } from '../utils/logger';
 
 export interface MatchRankingOptions {
   exactMatchBonus: number;

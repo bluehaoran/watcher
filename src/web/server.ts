@@ -3,17 +3,13 @@ import session from 'express-session';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import path from 'path';
-import { fileURLToPath } from 'url';
-import { logger } from '../utils/logger.js';
-import { config } from '../utils/config.js';
-import { setupRoutes } from './routes/setup.js';
-import { productRoutes } from './routes/products.js';
-import { sourceRoutes } from './routes/sources.js';
-import { scannerRoutes } from './routes/scanner.js';
-import { actionRoutes } from './routes/actions.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { logger } from '../utils/logger';
+import { config } from '../utils/config';
+import { setupRoutes } from './routes/setup';
+import { productRoutes } from './routes/products';
+import { sourceRoutes } from './routes/sources';
+import { scannerRoutes } from './routes/scanner';
+import { actionRoutes } from './routes/actions';
 
 export function createServer() {
   const app = express();

@@ -1,6 +1,6 @@
 import express from 'express';
-import { PluginManager } from '../../plugins/PluginManager.js';
-import { logger } from '../../utils/logger.js';
+import { PluginManager } from '../../plugins/PluginManager';
+import { logger } from '../../utils/logger';
 
 const router = express.Router();
 
@@ -61,14 +61,14 @@ router.post('/test-notifier', async (req, res) => {
 
     const isValid = await notifier.test(config);
     
-    res.json({ 
+    return res.json({ 
       success: isValid,
       message: isValid ? 'Configuration test successful' : 'Configuration test failed'
     });
 
   } catch (error) {
     logger.error('Failed to test notifier:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false, 
       error: 'Test failed',
       message: error instanceof Error ? error.message : String(error)

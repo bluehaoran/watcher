@@ -1,6 +1,6 @@
-import { prisma } from './database.js';
-import { logger } from '../utils/logger.js';
-import { PluginManager } from '../plugins/PluginManager.js';
+import { prisma } from './database';
+import { logger } from '../utils/logger';
+import { PluginManager } from '../plugins/PluginManager';
 
 export interface CreateProductData {
   name: string;
@@ -43,7 +43,7 @@ export class ProductManager {
         const newProduct = await tx.product.create({
           data: {
             ...productData,
-            threshold: data.threshold ? JSON.stringify(data.threshold) : null,
+            threshold: data.threshold ? JSON.stringify(data.threshold) : undefined,
           }
         });
 

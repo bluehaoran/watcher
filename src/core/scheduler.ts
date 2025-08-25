@@ -1,7 +1,7 @@
 import cron from 'node-cron';
-import { Tracker } from './tracker.js';
-import { logger } from '../utils/logger.js';
-import { config } from '../utils/config.js';
+import { Tracker } from './tracker';
+import { logger } from '../utils/logger';
+// import { config } from '../utils/config';
 
 export class Scheduler {
   private tasks = new Map<string, cron.ScheduledTask>();
@@ -127,12 +127,12 @@ export class Scheduler {
   getTaskStatus(): any {
     return {
       mainTask: this.mainTask ? {
-        running: this.mainTask.getStatus() === 'scheduled',
+        running: !!this.mainTask,
         nextRun: 'Every hour'
       } : null,
       customTasks: Array.from(this.tasks.entries()).map(([name, task]) => ({
         name,
-        running: task.getStatus() === 'scheduled'
+        running: !!task
       }))
     };
   }

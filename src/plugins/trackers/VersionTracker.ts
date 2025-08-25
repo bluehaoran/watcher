@@ -4,7 +4,7 @@ import {
   ComparisonResult, 
   ElementMatch, 
   ConfigSchema 
-} from '../base/TrackerPlugin.js';
+} from '../base/TrackerPlugin';
 
 export class VersionTracker extends TrackerPlugin {
   name = 'Version Tracker';

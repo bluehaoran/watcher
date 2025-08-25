@@ -1,8 +1,8 @@
 import express from 'express';
-import { WebScraper } from '../../core/scraper.js';
-import { ElementFinder } from '../../core/elementFinder.js';
-import { PluginManager } from '../../plugins/PluginManager.js';
-import { logger } from '../../utils/logger.js';
+import { WebScraper } from '../../core/scraper';
+import { ElementFinder } from '../../core/elementFinder';
+import { PluginManager } from '../../plugins/PluginManager';
+import { logger } from '../../utils/logger';
 
 const router = express.Router();
 
@@ -23,7 +23,7 @@ export function initializeScannerRoutes(pm: PluginManager) {
 
 // GET /scanner - Element scanner interface
 router.get('/', (req, res) => {
-  res.send(generateScannerHTML());
+  return res.send(generateScannerHTML());
 });
 
 // POST /scanner/scan - Scan URL for elements
@@ -37,7 +37,7 @@ router.post('/scan', async (req, res) => {
 
     logger.info(`Scanning ${url} for "${searchText}"`);
 
-    let matches = [];
+    let matches: any[] = [];
     
     if (searchText) {
       // Find elements containing the search text
@@ -58,7 +58,7 @@ router.post('/scan', async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       success: true,
       url,
       searchText,
@@ -68,7 +68,7 @@ router.post('/scan', async (req, res) => {
 
   } catch (error) {
     logger.error('Scan failed:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false,
       error: error instanceof Error ? error.message : String(error)
     });
@@ -101,7 +101,7 @@ router.post('/test-selector', async (req, res) => {
       }
     }
 
-    res.json({
+    return res.json({
       success: true,
       content: scrapeResult.content,
       parseResult,
@@ -110,7 +110,7 @@ router.post('/test-selector', async (req, res) => {
 
   } catch (error) {
     logger.error('Selector test failed:', error);
-    res.status(500).json({ 
+    return res.status(500).json({ 
       success: false,
       error: error instanceof Error ? error.message : String(error)
     });

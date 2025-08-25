@@ -1,6 +1,6 @@
 import express from 'express';
-import { ProductManager } from '../../core/productManager.js';
-import { logger } from '../../utils/logger.js';
+import { ProductManager } from '../../core/productManager';
+import { logger } from '../../utils/logger';
 
 const router = express.Router();
 
@@ -28,10 +28,10 @@ router.post('/', async (req, res) => {
       selectorType: selectorType || 'css'
     });
 
-    res.status(201).json(source);
+    return res.status(201).json(source);
   } catch (error) {
     logger.error('Failed to add source:', error);
-    res.status(500).json({ error: 'Failed to add source' });
+    return res.status(500).json({ error: 'Failed to add source' });
   }
 });
 

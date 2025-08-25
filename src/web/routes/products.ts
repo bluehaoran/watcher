@@ -1,7 +1,7 @@
 import express from 'express';
-import { ProductManager } from '../../core/productManager.js';
-import { PluginManager } from '../../plugins/PluginManager.js';
-import { logger } from '../../utils/logger.js';
+import { ProductManager } from '../../core/productManager';
+import { PluginManager } from '../../plugins/PluginManager';
+import { logger } from '../../utils/logger';
 
 const router = express.Router();
 
@@ -48,13 +48,13 @@ router.get('/:id', async (req, res) => {
     }
 
     if (req.headers.accept?.includes('application/json')) {
-      res.json(product);
+      return res.json(product);
     } else {
-      res.send(generateProductDetailHTML(product));
+      return res.send(generateProductDetailHTML(product));
     }
   } catch (error) {
     logger.error('Failed to get product:', error);
-    res.status(500).json({ error: 'Failed to fetch product' });
+    return res.status(500).json({ error: 'Failed to fetch product' });
   }
 });
 
@@ -79,11 +79,11 @@ router.post('/', async (req, res) => {
     }
 
     const product = await productManager.createProduct(productData);
-    res.status(201).json(product);
+    return res.status(201).json(product);
     
   } catch (error) {
     logger.error('Failed to create product:', error);
-    res.status(500).json({ error: 'Failed to create product' });
+    return res.status(500).json({ error: 'Failed to create product' });
   }
 });
 
@@ -91,10 +91,10 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const product = await productManager.updateProduct(req.params.id, req.body);
-    res.json(product);
+    return res.json(product);
   } catch (error) {
     logger.error('Failed to update product:', error);
-    res.status(500).json({ error: 'Failed to update product' });
+    return res.status(500).json({ error: 'Failed to update product' });
   }
 });
 

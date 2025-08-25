@@ -1,10 +1,10 @@
-import { prisma } from './database.js';
-import { logger } from '../utils/logger.js';
-import { WebScraper } from './scraper.js';
-import { PluginManager } from '../plugins/PluginManager.js';
-import { ProductManager } from './productManager.js';
-import { NotificationEvent } from '../plugins/base/NotifierPlugin.js';
-import { config } from '../utils/config.js';
+import { prisma } from './database';
+import { logger } from '../utils/logger';
+import { WebScraper } from './scraper';
+import { PluginManager } from '../plugins/PluginManager';
+import { ProductManager } from './productManager';
+import { NotificationEvent } from '../plugins/base/NotifierPlugin';
+import { config } from '../utils/config';
 
 export interface TrackingResult {
   success: boolean;
@@ -328,12 +328,12 @@ export class Tracker {
       const allSources = sources
         .filter(s => s.currentValue)
         .map(s => {
-          const value = JSON.parse(s.currentValue);
+          const value = JSON.parse(s.currentValue as string);
           const changed = changedSources.some(cs => cs.sourceId === s.id);
           
           return {
             sourceId: s.id,
-            storeName: s.storeName,
+            storeName: s.storeName || 'Unknown Store',
             value,
             formattedValue: tracker.format(value),
             url: s.url,
@@ -412,7 +412,7 @@ export class Tracker {
         source: {
           id: source.id,
           url: source.url,
-          storeName: source.storeName
+          storeName: source.storeName || 'Unknown Store'
         },
         changeType: comparison.changeType,
         oldValue: sourceResult.oldValue,

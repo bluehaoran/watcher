@@ -1,8 +1,8 @@
 import nodemailer, { Transporter } from 'nodemailer';
-import { NotifierPlugin, NotificationEvent, NotificationResult } from '../base/NotifierPlugin.js';
-import { ConfigSchema } from '../base/TrackerPlugin.js';
-import { logger } from '../../utils/logger.js';
-import { config } from '../../utils/config.js';
+import { NotifierPlugin, NotificationEvent, NotificationResult } from '../base/NotifierPlugin';
+import { ConfigSchema } from '../base/TrackerPlugin';
+import { logger } from '../../utils/logger';
+import { config } from '../../utils/config';
 
 export class EmailNotifier extends NotifierPlugin {
   name = 'Email Notifier';
@@ -26,10 +26,10 @@ export class EmailNotifier extends NotifierPlugin {
       throw new Error('Email configuration is incomplete. Please provide SMTP host, user, and password.');
     }
 
-    this.transporter = nodemailer.createTransporter(smtpConfig);
+    this.transporter = nodemailer.createTransport(smtpConfig);
     
     try {
-      await this.transporter.verify();
+      await this.transporter?.verify();
       logger.info('Email notifier initialized successfully');
     } catch (error) {
       logger.error('Failed to initialize email notifier:', error);

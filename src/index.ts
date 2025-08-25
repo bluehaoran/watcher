@@ -1,23 +1,23 @@
-import { config } from './utils/config.js';
-import { logger } from './utils/logger.js';
-import { connectDatabase } from './core/database.js';
-import { PluginManager } from './plugins/PluginManager.js';
-import { ProductManager } from './core/productManager.js';
-import { Tracker } from './core/tracker.js';
-import { Scheduler } from './core/scheduler.js';
-import { startServer } from './web/server.js';
+import { config } from './utils/config';
+import { logger } from './utils/logger';
+import { connectDatabase } from './core/database';
+import { PluginManager } from './plugins/PluginManager';
+import { ProductManager } from './core/productManager';
+import { Tracker } from './core/tracker';
+import { Scheduler } from './core/scheduler';
+import { startServer } from './web/server';
 import { 
   initializeProductRoutes 
-} from './web/routes/products.js';
+} from './web/routes/products';
 import { 
   initializeSetupRoutes 
-} from './web/routes/setup.js';
+} from './web/routes/setup';
 import {
   initializeSourceRoutes
-} from './web/routes/sources.js';
+} from './web/routes/sources';
 import {
   initializeScannerRoutes
-} from './web/routes/scanner.js';
+} from './web/routes/scanner';
 
 class PriceTrackerApp {
   private pluginManager: PluginManager;

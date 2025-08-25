@@ -1,4 +1,4 @@
-import { ConfigSchema } from './TrackerPlugin.js';
+import { ConfigSchema } from './TrackerPlugin';
 
 export interface NotificationEvent {
   product: {

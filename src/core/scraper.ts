@@ -1,6 +1,6 @@
-import { chromium, Browser, Page, BrowserContext } from 'playwright';
-import { logger } from '../utils/logger.js';
-import { config } from '../utils/config.js';
+import { chromium, Browser, BrowserContext } from 'playwright';
+import { logger } from '../utils/logger';
+import { config } from '../utils/config';
 
 export interface ScrapeResult {
   success: boolean;
@@ -164,7 +164,7 @@ export class WebScraper {
           if (!element) continue;
 
           // Generate CSS selector
-          const selector = this.generateSelector(element);
+          const selector = generateSelector(element);
           
           // Get surrounding context
           const context = element.parentElement?.innerHTML || element.innerHTML;

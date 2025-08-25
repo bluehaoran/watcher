@@ -4,7 +4,7 @@ import {
   ComparisonResult, 
   ElementMatch, 
   ConfigSchema 
-} from '../base/TrackerPlugin.js';
+} from '../base/TrackerPlugin';
 
 export class PriceTracker extends TrackerPlugin {
   name = 'Price Tracker';

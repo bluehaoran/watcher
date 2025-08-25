@@ -1,7 +1,7 @@
-import { NotifierPlugin, NotificationEvent, NotificationResult } from '../base/NotifierPlugin.js';
-import { ConfigSchema } from '../base/TrackerPlugin.js';
-import { logger } from '../../utils/logger.js';
-import { config } from '../../utils/config.js';
+import { NotifierPlugin, NotificationEvent, NotificationResult } from '../base/NotifierPlugin';
+import { ConfigSchema } from '../base/TrackerPlugin';
+import { logger } from '../../utils/logger';
+import { config } from '../../utils/config';
 
 interface DiscordEmbed {
   title: string;

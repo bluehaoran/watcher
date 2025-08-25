@@ -1,5 +1,5 @@
-import { TrackerPlugin } from './base/TrackerPlugin.js';
-import { NotifierPlugin } from './base/NotifierPlugin.js';
+import { TrackerPlugin } from './base/TrackerPlugin';
+import { NotifierPlugin } from './base/NotifierPlugin';
 
 export class PluginManager {
   private trackerPlugins = new Map<string, TrackerPlugin>();
