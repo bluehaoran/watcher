@@ -1,0 +1,56 @@
+# Default configuration for Uatu Watcher
+[server]
+host = "0.0.0.0"
+port = 3000
+base_url = "http://localhost:3000"
+request_timeout = 30
+shutdown_timeout = 10
+
+[database]
+url = "sqlite:///data/uatu.db"
+max_connections = 10
+min_connections = 1
+acquire_timeout = 30
+
+[security]
+secret_key = "change-me-in-production-minimum-32-characters"
+jwt_expiry = 3600
+rate_limit_requests = 100
+rate_limit_window = 60
+
+[scraper]
+max_concurrent_checks = 5
+retry_attempts = 3
+retry_delay_ms = 5000
+request_timeout = 30
+user_agent = "UatuWatcher/1.0"
+
+[scheduler]
+default_interval = "0 0 * * *"
+max_running_jobs = 10
+job_timeout = 300
+
+[notifications.smtp]
+host = "smtp.gmail.com"
+port = 587
+use_tls = true
+from_name = "Uatu Watcher"
+
+[notifications.discord]
+username = "Uatu Watcher"
+
+[screenshots]
+enabled = true
+quality = 80
+max_size_mb = 5
+retention_days = 30
+
+[metrics]
+enabled = true
+port = 9001
+endpoint = "/metrics"
+
+[performance]
+thread_pool_size = 4
+memory_limit_mb = 256
+enable_compression = true

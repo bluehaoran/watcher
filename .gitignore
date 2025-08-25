@@ -1,0 +1,47 @@
+# Claude (keep IP out of public repo)
+CLAUDE.md
+
+# Rust
+target/
+Cargo.lock
+**/*.rs.bk
+*.pdb
+
+# Environment variables
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Nix
+.direnv/
+result
+result-*
+
+# Logs
+*.log
+logs/
+
+# Temporary files
+*.tmp
+*.temp
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+
+# Chrome/Selenium
+chromedriver
+chromedriver.exe
+
+# Build artifacts
+dist/
+build/
