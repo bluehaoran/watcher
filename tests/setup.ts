@@ -3,7 +3,7 @@ import { vi } from 'vitest';
 // Mock environment variables for testing
 process.env.NODE_ENV = 'test';
 process.env.DATABASE_URL = 'file:./test.db';
-process.env.SECRET_KEY = 'test-secret-key';
+process.env.SECRET_KEY = 'test-secret-key-that-is-at-least-32-characters-long';
 process.env.BASE_URL = 'http://localhost:3000';
 process.env.LOG_LEVEL = 'error'; // Suppress logs during tests
 

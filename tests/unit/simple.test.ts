@@ -7,6 +7,6 @@ describe('Simple Test', () => {
 
   it('should test environment variables', () => {
     expect(process.env.NODE_ENV).toBe('test');
-    expect(process.env.SECRET_KEY).toBe('test-secret-key');
+    expect(process.env.SECRET_KEY).toBe('test-secret-key-that-is-at-least-32-characters-long');
   });
 });
