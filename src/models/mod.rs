@@ -65,6 +65,8 @@ pub enum SelectorType {
     Css,
     #[sqlx(rename = "xpath")]
     Xpath,
+    #[sqlx(rename = "text")]
+    Text,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, sqlx::Type)]
