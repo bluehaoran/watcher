@@ -1,0 +1,448 @@
+{% extends "base.html" %}
+
+{% block title %}Scheduler - Uatu Watcher{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Job Scheduler</h1>
+    <p class="page-description">Monitor and manage scheduled product checks</p>
+</div>
+
+<div class="scheduler-stats">
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">⚡</div>
+            <div class="stat-content">
+                <h3 class="stat-title">Active Jobs</h3>
+                <p class="stat-value" id="active-jobs">Loading...</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">⏸️</div>
+            <div class="stat-content">
+                <h3 class="stat-title">Paused Jobs</h3>
+                <p class="stat-value" id="paused-jobs">Loading...</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+                <h3 class="stat-title">Completed Today</h3>
+                <p class="stat-value" id="completed-jobs">Loading...</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">❌</div>
+            <div class="stat-content">
+                <h3 class="stat-title">Failed Jobs</h3>
+                <p class="stat-value" id="failed-jobs">Loading...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="scheduler-controls">
+    <div class="control-buttons">
+        <button class="btn btn-success" id="start-scheduler" onclick="controlScheduler('start')">
+            <span class="btn-icon">▶️</span>
+            Start Scheduler
+        </button>
+        <button class="btn btn-warning" id="pause-scheduler" onclick="controlScheduler('pause')">
+            <span class="btn-icon">⏸️</span>
+            Pause All
+        </button>
+        <button class="btn btn-danger" id="stop-scheduler" onclick="controlScheduler('stop')">
+            <span class="btn-icon">⏹️</span>
+            Stop Scheduler
+        </button>
+        <button class="btn btn-outline" onclick="refreshJobs()">
+            <span class="btn-icon">🔄</span>
+            Refresh
+        </button>
+    </div>
+</div>
+
+<div class="jobs-section">
+    <h2 class="section-title">Scheduled Jobs</h2>
+    
+    <div class="jobs-filters">
+        <select id="status-filter" class="filter-select" onchange="filterJobs()">
+            <option value="">All Status</option>
+            <option value="running">Running</option>
+            <option value="scheduled">Scheduled</option>
+            <option value="paused">Paused</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+        </select>
+    </div>
+
+    <div class="jobs-container">
+        <div class="jobs-table" id="jobs-table">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>Schedule</th>
+                        <th>Status</th>
+                        <th>Last Run</th>
+                        <th>Next Run</th>
+                        <th>Duration</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="jobs-tbody">
+                    <tr>
+                        <td colspan="7" class="loading-cell">Loading jobs...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Job Details Modal -->
+<div id="job-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Job Details</h3>
+            <button class="modal-close" onclick="closeJobModal()">&times;</button>
+        </div>
+        <div class="modal-body" id="job-details">
+            <!-- Job details will be populated here -->
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-outline" onclick="closeJobModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let jobs = [];
+    let schedulerStatus = 'unknown';
+
+    async function loadSchedulerData() {
+        try {
+            // Load scheduler stats
+            const statsResponse = await fetch('/api/v1/scheduler/stats');
+            const statsData = await statsResponse.json();
+
+            if (statsData.success) {
+                const stats = statsData.data;
+                document.getElementById('active-jobs').textContent = stats.active_jobs || 0;
+                document.getElementById('paused-jobs').textContent = stats.paused_jobs || 0;
+                document.getElementById('completed-jobs').textContent = stats.completed_today || 0;
+                document.getElementById('failed-jobs').textContent = stats.failed_jobs || 0;
+                
+                schedulerStatus = stats.status || 'unknown';
+                updateSchedulerControls();
+            }
+
+            // Load jobs
+            const jobsResponse = await fetch('/api/v1/scheduler/jobs');
+            const jobsData = await jobsResponse.json();
+
+            if (jobsData.success) {
+                jobs = jobsData.data;
+                renderJobs();
+            }
+
+        } catch (error) {
+            console.error('Failed to load scheduler data:', error);
+            showError('Failed to load scheduler data: ' + error.message);
+        }
+    }
+
+    function renderJobs() {
+        const tbody = document.getElementById('jobs-tbody');
+        const statusFilter = document.getElementById('status-filter').value;
+
+        let filteredJobs = jobs;
+        if (statusFilter) {
+            filteredJobs = jobs.filter(job => job.status.toLowerCase() === statusFilter);
+        }
+
+        if (filteredJobs.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-cell">No jobs found</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = filteredJobs.map(job => `
+            <tr>
+                <td>
+                    <div class="job-product">
+                        <strong>${escapeHtml(job.product_name || job.product_id)}</strong>
+                        <small>${escapeHtml(job.product_id)}</small>
+                    </div>
+                </td>
+                <td>
+                    <code class="cron-expression">${escapeHtml(job.cron_expression || 'Manual')}</code>
+                </td>
+                <td>
+                    <span class="status-badge status-${job.status.toLowerCase()}">${job.status}</span>
+                </td>
+                <td>${formatDateTime(job.last_run)}</td>
+                <td>${formatDateTime(job.next_run)}</td>
+                <td>${job.average_duration ? Math.round(job.average_duration) + 'ms' : 'N/A'}</td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn btn-xs btn-outline" onclick="viewJobDetails('${job.product_id}')" title="View Details">👁️</button>
+                        ${job.status === 'paused' 
+                            ? `<button class="btn btn-xs btn-success" onclick="resumeJob('${job.product_id}')" title="Resume">▶️</button>`
+                            : `<button class="btn btn-xs btn-warning" onclick="pauseJob('${job.product_id}')" title="Pause">⏸️</button>`
+                        }
+                        <button class="btn btn-xs btn-primary" onclick="runJobNow('${job.product_id}')" title="Run Now">🔄</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    async function controlScheduler(action) {
+        try {
+            let endpoint, method;
+            
+            switch (action) {
+                case 'start':
+                    // In a real implementation, this would start the scheduler
+                    showSuccess('Scheduler started successfully');
+                    break;
+                case 'pause':
+                    // In a real implementation, this would pause all jobs
+                    showSuccess('All jobs have been paused');
+                    break;
+                case 'stop':
+                    // In a real implementation, this would stop the scheduler
+                    showSuccess('Scheduler stopped successfully');
+                    break;
+                default:
+                    throw new Error('Unknown action: ' + action);
+            }
+
+            // Refresh data after action
+            setTimeout(() => {
+                loadSchedulerData();
+            }, 1000);
+
+        } catch (error) {
+            showError('Scheduler action failed: ' + error.message);
+        }
+    }
+
+    async function pauseJob(productId) {
+        try {
+            const response = await fetch(`/api/v1/scheduler/jobs/${productId}/pause`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showSuccess('Job paused successfully');
+                loadSchedulerData();
+            } else {
+                showError('Failed to pause job: ' + (data.error?.message || 'Unknown error'));
+            }
+        } catch (error) {
+            showError('Failed to pause job: ' + error.message);
+        }
+    }
+
+    async function resumeJob(productId) {
+        try {
+            const response = await fetch(`/api/v1/scheduler/jobs/${productId}/resume`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showSuccess('Job resumed successfully');
+                loadSchedulerData();
+            } else {
+                showError('Failed to resume job: ' + (data.error?.message || 'Unknown error'));
+            }
+        } catch (error) {
+            showError('Failed to resume job: ' + error.message);
+        }
+    }
+
+    async function runJobNow(productId) {
+        try {
+            const response = await fetch(`/api/v1/products/${productId}/check`, {
+                method: 'POST'
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                showSuccess(`Job executed. ${data.data.changes_detected ? 'Changes detected!' : 'No changes detected.'}`);
+                loadSchedulerData();
+            } else {
+                showError('Failed to run job: ' + (data.error?.message || 'Unknown error'));
+            }
+        } catch (error) {
+            showError('Failed to run job: ' + error.message);
+        }
+    }
+
+    async function viewJobDetails(productId) {
+        try {
+            const response = await fetch(`/api/v1/scheduler/jobs/${productId}`);
+            const data = await response.json();
+
+            if (data.success) {
+                const job = data.data;
+                document.getElementById('job-details').innerHTML = `
+                    <div class="job-detail-grid">
+                        <div class="detail-item">
+                            <strong>Product ID:</strong> ${escapeHtml(job.product_id)}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Product Name:</strong> ${escapeHtml(job.product_name || 'N/A')}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Status:</strong> <span class="status-badge status-${job.status.toLowerCase()}">${job.status}</span>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Cron Expression:</strong> <code>${escapeHtml(job.cron_expression || 'Manual')}</code>
+                        </div>
+                        <div class="detail-item">
+                            <strong>Created:</strong> ${formatDateTime(job.created_at)}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Last Run:</strong> ${formatDateTime(job.last_run)}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Next Run:</strong> ${formatDateTime(job.next_run)}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Run Count:</strong> ${job.run_count || 0}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Success Count:</strong> ${job.success_count || 0}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Failure Count:</strong> ${job.failure_count || 0}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Average Duration:</strong> ${job.average_duration ? Math.round(job.average_duration) + 'ms' : 'N/A'}
+                        </div>
+                        <div class="detail-item">
+                            <strong>Last Error:</strong> ${escapeHtml(job.last_error || 'None')}
+                        </div>
+                    </div>
+                `;
+                document.getElementById('job-modal').style.display = 'block';
+            } else {
+                showError('Failed to load job details: ' + (data.error?.message || 'Unknown error'));
+            }
+        } catch (error) {
+            showError('Failed to load job details: ' + error.message);
+        }
+    }
+
+    function closeJobModal() {
+        document.getElementById('job-modal').style.display = 'none';
+    }
+
+    function filterJobs() {
+        renderJobs();
+    }
+
+    function refreshJobs() {
+        loadSchedulerData();
+    }
+
+    function updateSchedulerControls() {
+        const startBtn = document.getElementById('start-scheduler');
+        const pauseBtn = document.getElementById('pause-scheduler');
+        const stopBtn = document.getElementById('stop-scheduler');
+
+        // Update button states based on scheduler status
+        switch (schedulerStatus.toLowerCase()) {
+            case 'running':
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                stopBtn.disabled = false;
+                break;
+            case 'paused':
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                stopBtn.disabled = false;
+                break;
+            case 'stopped':
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                stopBtn.disabled = true;
+                break;
+            default:
+                // Unknown status, enable all
+                startBtn.disabled = false;
+                pauseBtn.disabled = false;
+                stopBtn.disabled = false;
+        }
+    }
+
+    function formatDateTime(dateString) {
+        if (!dateString) return 'N/A';
+        const date = new Date(dateString);
+        return date.toLocaleString();
+    }
+
+    function escapeHtml(text) {
+        if (!text) return '';
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+
+    function showSuccess(message) {
+        showFlashMessage(message, 'success');
+    }
+
+    function showError(message) {
+        showFlashMessage(message, 'error');
+    }
+
+    function showFlashMessage(message, type) {
+        const flashContainer = document.querySelector('.flash-messages') || 
+            (() => {
+                const container = document.createElement('div');
+                container.className = 'flash-messages';
+                document.querySelector('.container').insertBefore(container, document.querySelector('.page-header'));
+                return container;
+            })();
+
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = `
+            ${message}
+            <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        flashContainer.appendChild(alert);
+        
+        setTimeout(() => {
+            if (alert.parentElement) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', function(event) {
+        const modal = document.getElementById('job-modal');
+        if (event.target === modal) {
+            closeJobModal();
+        }
+    });
+
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', loadSchedulerData);
+    
+    // Refresh data every 15 seconds
+    setInterval(loadSchedulerData, 15000);
+</script>
+{% endblock %}

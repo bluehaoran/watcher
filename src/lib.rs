@@ -7,7 +7,7 @@ pub mod product_manager;
 pub mod scheduler;
 pub mod scraper;
 pub mod utils;
-// pub mod web;
+pub mod web;
 
 // Re-export commonly used types
 pub use config::AppConfig;

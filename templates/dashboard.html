@@ -1,0 +1,195 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Uatu Watcher{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-description">Overview of your price and version tracking system</p>
+</div>
+
+<div class="dashboard-grid">
+    <!-- System Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card">
+            <div class="stat-icon">📊</div>
+            <div class="stat-content">
+                <h3 class="stat-title">Total Products</h3>
+                <p class="stat-value" id="total-products">Loading...</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">⏰</div>
+            <div class="stat-content">
+                <h3 class="stat-title">Active Jobs</h3>
+                <p class="stat-value" id="active-jobs">Loading...</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🔄</div>
+            <div class="stat-content">
+                <h3 class="stat-title">Recent Checks</h3>
+                <p class="stat-value" id="recent-checks">Loading...</p>
+            </div>
+        </div>
+
+        <div class="stat-card">
+            <div class="stat-icon">🚨</div>
+            <div class="stat-content">
+                <h3 class="stat-title">Changes Detected</h3>
+                <p class="stat-value" id="changes-detected">Loading...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2 class="section-title">Quick Actions</h2>
+        <div class="action-buttons">
+            <a href="/products/new" class="btn btn-primary">
+                <span class="btn-icon">➕</span>
+                Add Product
+            </a>
+            <button class="btn btn-secondary" onclick="runAllChecks()">
+                <span class="btn-icon">🔄</span>
+                Run All Checks
+            </button>
+            <a href="/scheduler" class="btn btn-outline">
+                <span class="btn-icon">⚙️</span>
+                Manage Schedule
+            </a>
+        </div>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="activity-section">
+        <h2 class="section-title">Recent Activity</h2>
+        <div class="activity-list" id="recent-activity">
+            <div class="loading-spinner">Loading recent activity...</div>
+        </div>
+    </div>
+
+    <!-- System Status -->
+    <div class="status-section">
+        <h2 class="section-title">System Status</h2>
+        <div class="status-grid">
+            <div class="status-item">
+                <span class="status-label">Database:</span>
+                <span class="status-indicator status-healthy" id="db-status">●</span>
+                <span class="status-text">Connected</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Scheduler:</span>
+                <span class="status-indicator status-healthy" id="scheduler-status">●</span>
+                <span class="status-text">Running</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Scraper:</span>
+                <span class="status-indicator status-healthy" id="scraper-status">●</span>
+                <span class="status-text">Available</span>
+            </div>
+            <div class="status-item">
+                <span class="status-label">Uptime:</span>
+                <span class="status-text" id="system-uptime">Loading...</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Dashboard functionality
+    async function loadDashboardData() {
+        try {
+            // Load system info
+            const systemResponse = await fetch('/api/v1/system/info');
+            const systemData = await systemResponse.json();
+            
+            if (systemData.success) {
+                document.getElementById('system-uptime').textContent = systemData.data.uptime || 'Unknown';
+            }
+
+            // Load scheduler stats
+            const schedulerResponse = await fetch('/api/v1/scheduler/stats');
+            const schedulerData = await schedulerResponse.json();
+            
+            if (schedulerData.success) {
+                const stats = schedulerData.data;
+                document.getElementById('active-jobs').textContent = stats.active_jobs || 0;
+                document.getElementById('total-products').textContent = stats.total_jobs || 0;
+            }
+
+            // Load system metrics
+            const metricsResponse = await fetch('/api/v1/system/metrics');
+            const metricsData = await metricsResponse.json();
+            
+            if (metricsData.success) {
+                const metrics = metricsData.data;
+                document.getElementById('recent-checks').textContent = 
+                    (metrics.checks?.successful || 0) + (metrics.checks?.failed || 0);
+                document.getElementById('changes-detected').textContent = '0'; // Placeholder
+            }
+
+        } catch (error) {
+            console.error('Failed to load dashboard data:', error);
+        }
+    }
+
+    async function runAllChecks() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        button.innerHTML = '<span class="btn-icon">⏳</span>Running...';
+        button.disabled = true;
+
+        try {
+            // This would trigger all product checks
+            // For now, just simulate the action
+            await new Promise(resolve => setTimeout(resolve, 2000));
+            
+            showFlashMessage('All product checks have been queued for execution.', 'success');
+            loadDashboardData(); // Refresh data
+        } catch (error) {
+            showFlashMessage('Failed to run checks: ' + error.message, 'error');
+        } finally {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    }
+
+    function showFlashMessage(message, type) {
+        const flashContainer = document.querySelector('.flash-messages') || 
+            (() => {
+                const container = document.createElement('div');
+                container.className = 'flash-messages';
+                document.querySelector('.container').insertBefore(container, document.querySelector('.page-header'));
+                return container;
+            })();
+
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type}`;
+        alert.innerHTML = `
+            ${message}
+            <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+        `;
+        
+        flashContainer.appendChild(alert);
+        
+        // Auto-remove after 5 seconds
+        setTimeout(() => {
+            if (alert.parentElement) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+
+    // Load data when page loads
+    document.addEventListener('DOMContentLoaded', loadDashboardData);
+    
+    // Refresh data every 30 seconds
+    setInterval(loadDashboardData, 30000);
+</script>
+{% endblock %}

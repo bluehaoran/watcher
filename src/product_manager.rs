@@ -12,21 +12,25 @@ use crate::scraper::{WebScraper, ScrapeRequest};
 pub struct ProductRequest {
     pub name: String,
     pub description: Option<String>,
-    pub urls: Vec<String>,
+    pub sources: Vec<NewSource>, // Changed from urls to sources
     pub tracker_type: TrackerType,
-    pub notify_on: NotifyOn,
-    pub check_interval: String, // Cron expression
+    pub notify_on: Option<NotifyOn>,
+    pub check_interval: Option<String>, // Made optional
     pub selector: Option<ElementSelector>,
     pub threshold_value: Option<f64>,
+    pub threshold_type: Option<crate::models::ThresholdType>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProductUpdate {
     pub name: Option<String>,
     pub description: Option<String>,
+    pub sources: Option<Vec<NewSource>>, // Added sources
     pub check_interval: Option<String>,
     pub is_active: Option<bool>,
     pub threshold_value: Option<f64>,
+    pub threshold_type: Option<crate::models::ThresholdType>,
+    pub notify_on: Option<NotifyOn>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -93,15 +97,17 @@ impl ProductManager {
 
     pub async fn create_product(&self, request: ProductRequest) -> Result<Product> {
         // Validate URLs
-        for url in &request.urls {
-            if url::Url::parse(url).is_err() {
-                return Err(anyhow::anyhow!("Invalid URL: {}", url));
+        for source in &request.sources {
+            if url::Url::parse(&source.url).is_err() {
+                return Err(anyhow::anyhow!("Invalid URL: {}", source.url));
             }
         }
 
-        // Validate cron expression
-        if !self.is_valid_cron(&request.check_interval) {
-            return Err(anyhow::anyhow!("Invalid cron expression: {}", request.check_interval));
+        // Validate cron expression if provided
+        if let Some(ref interval) = request.check_interval {
+            if !interval.trim().is_empty() && !self.is_valid_cron(interval) {
+                return Err(anyhow::anyhow!("Invalid cron expression: {}", interval));
+            }
         }
 
         // Create product
@@ -109,10 +115,10 @@ impl ProductManager {
             name: request.name,
             description: request.description,
             tracker_type: request.tracker_type,
-            notify_on: Some(request.notify_on),
-            threshold_type: None,
+            notify_on: request.notify_on,
+            threshold_type: request.threshold_type,
             threshold_value: request.threshold_value,
-            check_interval: Some(request.check_interval),
+            check_interval: request.check_interval,
         });
 
         // In a full implementation, we would create sources here
@@ -466,6 +472,47 @@ impl ProductManager {
 
         Ok(results)
     }
+
+    /// List products with pagination and filtering
+    pub async fn list_products(
+        &self,
+        page: u32,
+        per_page: u32,
+        filter: &crate::web::FilterParams,
+    ) -> Result<(Vec<Product>, u32)> {
+        // In a real implementation, this would query the database with filters
+        // For now, return empty list for demonstration
+        tracing::debug!(
+            "Listing products: page={}, per_page={}, active={:?}, tracker_type={:?}, search={:?}",
+            page, per_page, filter.active, filter.tracker_type, filter.search
+        );
+
+        // Mock empty result
+        let products = Vec::new();
+        let total = 0;
+
+        Ok((products, total))
+    }
+
+    /// Get a product by ID
+    pub async fn get_product(&self, product_id: &str) -> Result<Option<Product>> {
+        // In a real implementation, this would query the database
+        // For now, return None to simulate product not found
+        tracing::debug!("Getting product: {}", product_id);
+        
+        // Mock implementation - return None for any ID to simulate empty database
+        Ok(None)
+    }
+
+    /// Delete a product by ID
+    pub async fn delete_product(&self, product_id: &str) -> Result<()> {
+        // In a real implementation, this would delete from database
+        // For now, just log the operation
+        tracing::info!("Deleting product: {}", product_id);
+        
+        // Simulate successful deletion
+        Ok(())
+    }
 }
 
 #[cfg(test)]
@@ -561,16 +608,24 @@ mod tests {
         let request = ProductRequest {
             name: "Test Product".to_string(),
             description: Some("Test description".to_string()),
-            urls: vec!["https://example.com/product".to_string()],
+            sources: vec![crate::models::NewSource {
+                product_id: "test".to_string(),
+                url: "https://example.com/product".to_string(),
+                store_name: None,
+                title: "Test Source".to_string(),
+                selector: ".price".to_string(),
+                selector_type: Some(crate::models::SelectorType::Css),
+            }],
             tracker_type: TrackerType::Price,
-            notify_on: NotifyOn::Decrease,
-            check_interval: "0 0 * * *".to_string(),
+            notify_on: Some(NotifyOn::Decrease),
+            check_interval: Some("0 0 * * *".to_string()),
             selector: None,
             threshold_value: Some(10.0),
+            threshold_type: None,
         };
 
         assert_eq!(request.name, "Test Product");
-        assert_eq!(request.urls.len(), 1);
+        assert_eq!(request.sources.len(), 1);
         assert_eq!(request.tracker_type, TrackerType::Price);
         assert_eq!(request.threshold_value, Some(10.0));
     }
@@ -580,14 +635,26 @@ mod tests {
         let update = ProductUpdate {
             name: Some("Updated Product".to_string()),
             description: Some("Updated description".to_string()),
+            sources: Some(vec![NewSource {
+                product_id: "test".to_string(),
+                url: "https://example.com/updated".to_string(),
+                store_name: None,
+                title: "Updated Source".to_string(),
+                selector: ".new-price".to_string(),
+                selector_type: Some(SelectorType::Css),
+            }]),
             check_interval: Some("0 */6 * * *".to_string()),
             is_active: Some(false),
             threshold_value: Some(5.0),
+            threshold_type: None,
+            notify_on: Some(NotifyOn::Decrease),
         };
 
         assert_eq!(update.name, Some("Updated Product".to_string()));
         assert_eq!(update.is_active, Some(false));
         assert_eq!(update.threshold_value, Some(5.0));
+        assert!(update.sources.is_some());
+        assert_eq!(update.sources.unwrap().len(), 1);
     }
 
     #[tokio::test]
@@ -596,12 +663,20 @@ mod tests {
             let request = ProductRequest {
                 name: "Test Product".to_string(),
                 description: None,
-                urls: vec!["https://example.com/product".to_string()],
+                sources: vec![NewSource {
+                    product_id: "test".to_string(),
+                    url: "https://example.com/product".to_string(),
+                    store_name: None,
+                    title: "Test Source".to_string(),
+                    selector: ".price".to_string(),
+                    selector_type: Some(SelectorType::Css),
+                }],
                 tracker_type: TrackerType::Price,
-                notify_on: NotifyOn::Decrease,
-                check_interval: "0 0 * * *".to_string(),
+                notify_on: Some(NotifyOn::Decrease),
+                check_interval: Some("0 0 * * *".to_string()),
                 selector: None,
                 threshold_value: None,
+                threshold_type: None,
             };
 
             let result = manager.create_product(request).await;
@@ -619,12 +694,20 @@ mod tests {
             let request = ProductRequest {
                 name: "Test Product".to_string(),
                 description: None,
-                urls: vec!["invalid-url".to_string()],
+                sources: vec![NewSource {
+                    product_id: "test".to_string(),
+                    url: "invalid-url".to_string(),
+                    store_name: None,
+                    title: "Test Source".to_string(),
+                    selector: ".price".to_string(),
+                    selector_type: Some(SelectorType::Css),
+                }],
                 tracker_type: TrackerType::Price,
-                notify_on: NotifyOn::Decrease,
-                check_interval: "0 0 * * *".to_string(),
+                notify_on: Some(NotifyOn::Decrease),
+                check_interval: Some("0 0 * * *".to_string()),
                 selector: None,
                 threshold_value: None,
+                threshold_type: None,
             };
 
             let result = manager.create_product(request).await;
@@ -639,12 +722,20 @@ mod tests {
             let request = ProductRequest {
                 name: "Test Product".to_string(),
                 description: None,
-                urls: vec!["https://example.com".to_string()],
+                sources: vec![NewSource {
+                    product_id: "test".to_string(),
+                    url: "https://example.com".to_string(),
+                    store_name: None,
+                    title: "Test Source".to_string(),
+                    selector: ".price".to_string(),
+                    selector_type: Some(SelectorType::Css),
+                }],
                 tracker_type: TrackerType::Price,
-                notify_on: NotifyOn::Decrease,
-                check_interval: "invalid cron".to_string(),
+                notify_on: Some(NotifyOn::Decrease),
+                check_interval: Some("invalid cron".to_string()),
                 selector: None,
                 threshold_value: None,
+                threshold_type: None,
             };
 
             let result = manager.create_product(request).await;
@@ -659,9 +750,12 @@ mod tests {
             let update = ProductUpdate {
                 name: Some("Updated Name".to_string()),
                 description: Some("Updated description".to_string()),
+                sources: None, // Not updating sources in this test
                 check_interval: Some("0 */2 * * *".to_string()),
                 is_active: Some(false),
                 threshold_value: Some(15.0),
+                threshold_type: None,
+                notify_on: None,
             };
 
             let result = manager.update_product("test-id", update).await;

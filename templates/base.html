@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}Uatu Watcher{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="/static/images/favicon.svg">
+    {% block head %}{% endblock %}
+</head>
+<body>
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <a href="/" class="brand-link">
+                    <span class="brand-icon">👁️</span>
+                    <span class="brand-text">Uatu Watcher</span>
+                </a>
+            </div>
+            <nav class="nav-menu">
+                <ul class="nav-list">
+                    <li class="nav-item">
+                        <a href="/" class="nav-link {% if current_page == 'dashboard' %}active{% endif %}">
+                            Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/products" class="nav-link {% if current_page == 'products' %}active{% endif %}">
+                            Products
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/scheduler" class="nav-link {% if current_page == 'scheduler' %}active{% endif %}">
+                            Scheduler
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a href="/settings" class="nav-link {% if current_page == 'settings' %}active{% endif %}">
+                            Settings
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <div class="container">
+            {% if flash_messages %}
+            <div class="flash-messages">
+                {% for message in flash_messages %}
+                <div class="alert alert-{{ message.type }}">
+                    {{ message.text }}
+                    <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <p>&copy; 2024 Uatu Watcher - Price & Version Tracking</p>
+                </div>
+                <div class="footer-section">
+                    <p>Version: {{ version }}</p>
+                </div>
+                <div class="footer-section">
+                    <a href="/health" class="footer-link">Health Check</a>
+                    <a href="/api/v1/system/info" class="footer-link">API Info</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/static/js/app.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>
