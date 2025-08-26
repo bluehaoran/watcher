@@ -83,6 +83,34 @@ impl PluginManager {
         Ok(())
     }
     
+    /// Parse text using a tracker plugin
+    pub async fn parse_value_with_tracker(&self, plugin_type: &str, text: &str) -> Result<serde_json::Value, AppError> {
+        let trackers = self.trackers.read().await;
+        if let Some(tracker) = trackers.get(plugin_type) {
+            let parse_result = tracker.as_ref().parse(text);
+            if parse_result.success {
+                Ok(parse_result.value)
+            } else {
+                Err(AppError::PluginError(format!("Tracker {} failed to parse text", plugin_type)))
+            }
+        } else {
+            Err(AppError::PluginError(format!("Tracker plugin '{}' not found", plugin_type)))
+        }
+    }
+    
+    /// Send notification using a notifier plugin
+    pub async fn send_notification(&self, plugin_type: &str, event: &super::traits::notifier::NotificationEvent) -> Result<super::traits::notifier::NotificationResult, AppError> {
+        let notifiers = self.notifiers.read().await;
+        if let Some(notifier) = notifiers.get(plugin_type) {
+            match notifier.as_ref().notify(event).await {
+                Ok(result) => Ok(result),
+                Err(e) => Err(AppError::PluginError(format!("Notifier {} failed: {}", plugin_type, e)))
+            }
+        } else {
+            Err(AppError::PluginError(format!("Notifier plugin '{}' not found", plugin_type)))
+        }
+    }
+    
     /// Shutdown all plugins
     pub async fn shutdown(&self) -> Result<(), AppError> {
         // Shutdown all trackers

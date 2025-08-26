@@ -49,6 +49,8 @@ impl From<validator::ValidationErrors> for AppError {
     }
 }
 
+// AppError can be converted to anyhow::Error via Display implementation
+
 // Result type alias for convenience
 pub type Result<T> = std::result::Result<T, AppError>;
 

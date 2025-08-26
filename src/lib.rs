@@ -3,6 +3,7 @@ pub mod config;
 pub mod element_finder;
 pub mod models;
 pub mod plugins;
+pub mod product_manager;
 pub mod scraper;
 pub mod utils;
 // pub mod web;
@@ -11,6 +12,7 @@ pub mod utils;
 pub use config::AppConfig;
 pub use element_finder::{ElementFinder, ElementFinderRequest, ElementFinderResult, ElementSelector, ElementMatch};
 pub use models::*;
+pub use product_manager::{ProductManager, ProductRequest, ProductUpdate, ProductCheckResult, ProductStats};
 pub use scraper::{WebScraper, ScrapeRequest, ScrapeResult};
 pub use utils::error::AppError;
 

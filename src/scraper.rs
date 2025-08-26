@@ -35,6 +35,7 @@ pub struct BrowserPool {
     current_index: std::sync::atomic::AtomicUsize,
 }
 
+#[derive(Clone)]
 pub struct WebScraper {
     browser_pool: Arc<BrowserPool>,
     config: ScraperConfig,
