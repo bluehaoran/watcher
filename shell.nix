@@ -17,9 +17,29 @@ pkgs.mkShell {
     awscli2
     playwright
     playwright-test
-sqlite
-openssl
-prisma
+    openssl
+    
+    # Playwright/Chromium dependencies
+    glib
+    gobject-introspection
+    nspr
+    nss
+    dbus
+    atk
+    at-spi2-atk
+    expat
+    at-spi2-core
+    xorg.libX11
+    xorg.libXcomposite
+    xorg.libXdamage
+    xorg.libXext
+    xorg.libXfixes
+    xorg.libXrandr
+    mesa
+    xorg.libxcb
+    libxkbcommon
+    systemd
+    alsa-lib
   ];
   GREETING = "Hi Haoran!";
   

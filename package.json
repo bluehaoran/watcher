@@ -15,8 +15,7 @@
     "test": "vitest",
     "test:ui": "vitest --ui",
     "lint": "eslint src --ext .ts",
-    "format": "prettier --write \"src/**/*.ts\"",
-    "migrate": "tsx scripts/migrate-from-prisma.ts"
+    "format": "prettier --write \"src/**/*.ts\""
   },
   "dependencies": {
     "dotenv": "^16.4.5",
