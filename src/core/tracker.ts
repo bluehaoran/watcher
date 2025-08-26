@@ -294,9 +294,9 @@ export class Tracker {
   }
 
   private async buildNotificationEvent(product: any, changedSources: TrackingResult[], tracker: any): Promise<NotificationEvent> {
-    const sources = await prisma.source.findMany({
-      where: { productId: product.id, isActive: true }
-    });
+    const sources = await db.sources.findMany(
+      (source) => source.productId === product.id && source.isActive
+    );
 
     const baseUrl = config.baseUrl;
     

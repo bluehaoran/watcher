@@ -1,5 +1,5 @@
 import express from 'express';
-import { prisma } from '../../core/database';
+import { db } from '../../core/database';
 import { logger } from '../../utils/logger';
 
 const router = express.Router();
@@ -10,13 +10,12 @@ router.get('/dismiss/:productId', async (req, res) => {
     const { productId } = req.params;
     
     // Log the dismissal action
-    await prisma.notificationLog.create({
-      data: {
-        productId,
-        type: 'action',
-        status: 'actioned',
-        action: 'dismissed',
-      }
+    await db.notificationLogs.create({
+      productId,
+      type: 'action',
+      status: 'actioned',
+      action: 'dismissed',
+      timestamp: new Date().toISOString(),
     });
 
     logger.info(`Notification dismissed for product ${productId}`);
@@ -34,13 +33,12 @@ router.get('/false-positive/:productId', async (req, res) => {
     const { productId } = req.params;
     
     // Log the false positive action
-    await prisma.notificationLog.create({
-      data: {
-        productId,
-        type: 'action',
-        status: 'actioned',
-        action: 'false_positive',
-      }
+    await db.notificationLogs.create({
+      productId,
+      type: 'action',
+      status: 'actioned',
+      action: 'false_positive',
+      timestamp: new Date().toISOString(),
     });
 
     // You might want to pause the product or adjust confidence scoring
@@ -59,20 +57,16 @@ router.get('/purchased/:productId', async (req, res) => {
     const { productId } = req.params;
     
     // Log the purchase action
-    await prisma.notificationLog.create({
-      data: {
-        productId,
-        type: 'action',
-        status: 'actioned',
-        action: 'purchased',
-      }
+    await db.notificationLogs.create({
+      productId,
+      type: 'action',
+      status: 'actioned',
+      action: 'purchased',
+      timestamp: new Date().toISOString(),
     });
 
     // Optionally pause or deactivate the product
-    await prisma.product.update({
-      where: { id: productId },
-      data: { isPaused: true }
-    });
+    await db.products.update(productId, { isPaused: true });
 
     logger.info(`Product marked as purchased: ${productId}`);
     
@@ -90,26 +84,24 @@ router.post('/feedback', async (req, res) => {
     
     if (action === 'false_positive' && sourceId) {
       // Create a false positive record with details
-      await prisma.falsePositive.create({
-        data: {
-          sourceId,
-          detectedText: req.body.detectedText || '',
-          detectedValue: req.body.detectedValue || {},
-          actualText: req.body.actualText,
-          htmlContext: req.body.htmlContext || '',
-          notes: notes || '',
-        }
+      await db.falsePositives.create({
+        sourceId,
+        detectedText: req.body.detectedText || '',
+        detectedValue: req.body.detectedValue || {},
+        actualText: req.body.actualText,
+        htmlContext: req.body.htmlContext || '',
+        notes: notes || '',
+        timestamp: new Date().toISOString(),
       });
     }
 
     // Log the feedback
-    await prisma.notificationLog.create({
-      data: {
-        productId,
-        type: 'feedback',
-        status: 'actioned',
-        action,
-      }
+    await db.notificationLogs.create({
+      productId,
+      type: 'feedback',
+      status: 'actioned',
+      action,
+      timestamp: new Date().toISOString(),
     });
 
     logger.info(`Feedback received for product ${productId}: ${action}`);

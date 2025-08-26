@@ -1,6 +1,9 @@
 # Stop Claude IP from going to Github
 CLAUDE.md
 
+# Nix
+.direnv/*
+
 # Dependencies
 node_modules/
 npm-debug.log*

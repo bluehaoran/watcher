@@ -1,6 +1,6 @@
 # Price Tracker
 
-A containerized price/version/number tracking application that monitors web pages for changes and sends notifications. Built with Node.js 22, TypeScript, and Playwright.
+A containerized price/version/number tracking application that monitors web pages for changes and sends notifications. Built with Node.js 22, TypeScript, Playwright, and a lightweight FileStore database.
 
 ## Features
 
@@ -47,14 +47,13 @@ npm run dev        # Start with hot reload
 npm run build      # Build for production
 npm start          # Start production server
 npm test           # Run tests
-npm run db:studio  # Database browser
 ```
 
 ## Configuration
 
 Key environment variables:
 - `SECRET_KEY`: Application security key (required)
-- `DATABASE_URL`: SQLite path (default: `file:./data/tracker.db`)
+- `DATA_DIR`: FileStore data directory (default: `./data`)
 - `SMTP_*`: Email notification settings
 - `DISCORD_WEBHOOK`: Discord notification URL
 
@@ -81,7 +80,7 @@ curl -X POST http://localhost:3000/scanner/scan \
 
 **Common Issues:**
 - Port in use: Change `PORT` in `.env`
-- Database issues: `rm -rf data/tracker.db* && npm run db:generate`
+- Data issues: `rm -rf data/*.json` to reset FileStore
 - Playwright issues: `npx playwright install chromium`
 - Memory issues: `export NODE_OPTIONS="--max-old-space-size=1024"`
 
@@ -118,4 +117,4 @@ GNU General Public License v3.0 - see [LICENSE](LICENSE).
 
 ---
 
-**Built with Node.js 22, TypeScript, Playwright, and modern web technologies.**
+**Built with Node.js 22, TypeScript, Playwright, FileStore flat file database, and modern web technologies.**
