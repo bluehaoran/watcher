@@ -789,6 +789,265 @@ p {
     color: var(--text-muted);
 }
 
+/* Setup Wizard Styles */
+.setup-wizard {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.wizard-progress {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3rem;
+    padding: 0 2rem;
+}
+
+.progress-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex: 1;
+}
+
+.progress-step:not(:last-child):after {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 60%;
+    right: -40%;
+    height: 2px;
+    background: var(--border-color);
+    z-index: -1;
+}
+
+.progress-step.active:not(:last-child):after,
+.progress-step.completed:not(:last-child):after {
+    background: var(--primary-color);
+}
+
+.step-number {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--border-color);
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.progress-step.active .step-number,
+.progress-step.completed .step-number {
+    background: var(--primary-color);
+    color: white;
+}
+
+.step-label {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.progress-step.active .step-label,
+.progress-step.completed .step-label {
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.wizard-step {
+    display: none;
+    background: var(--card-bg);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 2rem;
+    box-shadow: var(--box-shadow);
+}
+
+.wizard-step.active {
+    display: block;
+}
+
+.step-content {
+    margin-bottom: 2rem;
+}
+
+.feature-list {
+    list-style: none;
+    padding: 0;
+}
+
+.feature-list li {
+    padding: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.setup-tips {
+    background: var(--light-color);
+    border-left: 4px solid var(--info-color);
+    padding: 1rem;
+    margin-top: 2rem;
+    border-radius: 0 var(--border-radius) var(--border-radius) 0;
+}
+
+.setup-tips h3 {
+    margin-top: 0;
+    color: var(--info-color);
+}
+
+.source-section {
+    background: var(--light-color);
+    padding: 1.5rem;
+    border-radius: var(--border-radius);
+    margin-top: 1.5rem;
+}
+
+.notification-options {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.notification-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    padding: 1rem;
+}
+
+.notification-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.notification-header input[type="checkbox"] {
+    margin-top: 0.25rem;
+}
+
+.notification-header label {
+    flex: 1;
+    cursor: pointer;
+}
+
+.notification-header h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.notification-header p {
+    margin: 0;
+    color: var(--text-muted);
+}
+
+.notification-config {
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.schedule-options {
+    display: grid;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.schedule-card {
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    position: relative;
+    overflow: hidden;
+}
+
+.schedule-card input[type="radio"] {
+    position: absolute;
+    opacity: 0;
+}
+
+.schedule-label {
+    display: block;
+    padding: 1rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.schedule-card input[type="radio"]:checked + .schedule-label {
+    background: var(--primary-color);
+    color: white;
+    border-color: var(--primary-color);
+}
+
+.schedule-label h3 {
+    margin: 0 0 0.5rem 0;
+}
+
+.schedule-label p {
+    margin: 0;
+    opacity: 0.8;
+}
+
+.custom-schedule {
+    background: var(--light-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    margin-bottom: 1rem;
+}
+
+.schedule-preview {
+    background: var(--light-color);
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    border-left: 4px solid var(--success-color);
+}
+
+.schedule-preview h3 {
+    margin-top: 0;
+    color: var(--success-color);
+}
+
+.step-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--border-color);
+}
+
+.step-actions .btn {
+    min-width: 120px;
+}
+
+.completion-message {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.completion-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+}
+
+.setup-summary, .quick-links, .help-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--light-color);
+    border-radius: var(--border-radius);
+}
+
+.next-steps {
+    list-style: none;
+    padding: 0;
+}
+
+.next-steps li {
+    padding: 0.5rem 0;
+    font-size: 1.1rem;
+}
+
+.preview-container {
+    margin-top: 1rem;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     .nav-container {
@@ -827,5 +1086,27 @@ p {
     .footer-content {
         flex-direction: column;
         text-align: center;
+    }
+    
+    .wizard-progress {
+        padding: 0 1rem;
+    }
+    
+    .progress-step {
+        font-size: 0.875rem;
+    }
+    
+    .step-number {
+        width: 30px;
+        height: 30px;
+        font-size: 0.875rem;
+    }
+    
+    .wizard-step {
+        padding: 1rem;
+    }
+    
+    .step-actions {
+        flex-direction: column;
     }
 }

@@ -140,11 +140,7 @@ impl PriceComparison {
                     amount_str.parse().ok()
                 } else if let Some(amount_num) = obj.get("amount").and_then(|v| v.as_f64()) {
                     Some(amount_num)
-                } else if let Some(number) = obj.get("number").and_then(|v| v.as_f64()) {
-                    Some(number)
-                } else {
-                    None
-                }
+                } else { obj.get("number").and_then(|v| v.as_f64()) }
             },
             serde_json::Value::String(s) => s.parse().ok(),
             _ => None,

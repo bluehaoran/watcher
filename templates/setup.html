@@ -1,0 +1,879 @@
+{% extends "base.html" %}
+
+{% block title %}Setup Wizard - Uatu Watcher{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">Welcome to Uatu Watcher</h1>
+    <p class="page-description">Let's get you started with tracking prices and versions across the web</p>
+</div>
+
+<div class="setup-wizard">
+    <div class="wizard-progress">
+        <div class="progress-step active" data-step="1">
+            <div class="step-number">1</div>
+            <div class="step-label">Welcome</div>
+        </div>
+        <div class="progress-step" data-step="2">
+            <div class="step-number">2</div>
+            <div class="step-label">First Product</div>
+        </div>
+        <div class="progress-step" data-step="3">
+            <div class="step-number">3</div>
+            <div class="step-label">Notifications</div>
+        </div>
+        <div class="progress-step" data-step="4">
+            <div class="step-number">4</div>
+            <div class="step-label">Schedule</div>
+        </div>
+        <div class="progress-step" data-step="5">
+            <div class="step-number">5</div>
+            <div class="step-label">Complete</div>
+        </div>
+    </div>
+
+    <div class="wizard-content">
+        <!-- Step 1: Welcome -->
+        <div class="wizard-step active" id="step-1">
+            <div class="step-content">
+                <h2>🎯 Welcome to Your Personal Price Watcher</h2>
+                <p>Uatu Watcher helps you:</p>
+                <ul class="feature-list">
+                    <li>📉 Track price changes across multiple stores</li>
+                    <li>🔄 Monitor software version updates</li>
+                    <li>📊 Compare prices and find the best deals</li>
+                    <li>🔔 Get notified when prices drop or versions change</li>
+                    <li>⏰ Schedule automatic checks</li>
+                </ul>
+                
+                <div class="setup-tips">
+                    <h3>💡 Getting Started Tips</h3>
+                    <p>This wizard will help you set up your first product to track. You can add more products and customize settings later.</p>
+                </div>
+            </div>
+            
+            <div class="step-actions">
+                <button class="btn btn-primary" onclick="nextStep()">
+                    Get Started
+                    <span class="btn-icon">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Add First Product -->
+        <div class="wizard-step" id="step-2">
+            <div class="step-content">
+                <h2>📦 Add Your First Product</h2>
+                <p>Let's start by adding a product you want to track. You can track prices, version numbers, or any changing values on web pages.</p>
+                
+                <form id="product-form" data-autosave="setup-product">
+                    <div class="form-group">
+                        <label class="form-label" for="product-name">
+                            Product Name *
+                            <small>Give your product a memorable name</small>
+                        </label>
+                        <input type="text" id="product-name" name="name" class="form-control" 
+                               placeholder="e.g., Gaming Laptop, WordPress Plugin, Stock Price" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="product-description">
+                            Description
+                            <small>Optional description to help you remember what you're tracking</small>
+                        </label>
+                        <textarea id="product-description" name="description" class="form-control" rows="3"
+                                  placeholder="e.g., Tracking the price of ASUS ROG laptop on multiple sites"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="tracker-type">
+                            What do you want to track? *
+                        </label>
+                        <select id="tracker-type" name="tracker_type" class="form-control" required>
+                            <option value="">Select tracking type...</option>
+                            <option value="price">💰 Price - Track product prices and deals</option>
+                            <option value="version">🔄 Version - Monitor software versions and updates</option>
+                            <option value="number">🔢 Number - Track any changing number value</option>
+                        </select>
+                    </div>
+
+                    <div class="source-section">
+                        <h3>🌐 Add Source Website</h3>
+                        <div class="form-group">
+                            <label class="form-label" for="source-url">
+                                Website URL *
+                                <small>The webpage where the product information is displayed</small>
+                            </label>
+                            <input type="url" id="source-url" name="url" class="form-control" 
+                                   placeholder="https://example.com/product-page" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="source-name">
+                                Store/Source Name *
+                                <small>A friendly name for this source</small>
+                            </label>
+                            <input type="text" id="source-name" name="store_name" class="form-control" 
+                                   placeholder="e.g., Amazon, Best Buy, GitHub" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="selector-hint">
+                                Element to Track
+                                <small>CSS selector or text hint for the element containing the value (we'll help you find this)</small>
+                            </label>
+                            <input type="text" id="selector-hint" name="selector" class="form-control" 
+                                   placeholder="Leave blank to use our element finder">
+                            <button type="button" class="btn btn-outline btn-sm" onclick="openElementFinder()" style="margin-top: 0.5rem;">
+                                🎯 Use Element Finder
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="step-actions">
+                <button class="btn btn-secondary" onclick="prevStep()">
+                    <span class="btn-icon">←</span>
+                    Back
+                </button>
+                <button class="btn btn-primary" onclick="validateAndNextStep()" id="step-2-next">
+                    Continue
+                    <span class="btn-icon">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Notifications -->
+        <div class="wizard-step" id="step-3">
+            <div class="step-content">
+                <h2>🔔 Set Up Notifications</h2>
+                <p>Choose how you want to be notified when changes are detected.</p>
+
+                <div class="notification-options">
+                    <div class="notification-card">
+                        <div class="notification-header">
+                            <input type="checkbox" id="enable-email" name="notifications" value="email">
+                            <label for="enable-email">
+                                <h3>📧 Email Notifications</h3>
+                                <p>Get detailed email reports with change summaries</p>
+                            </label>
+                        </div>
+                        <div class="notification-config" id="email-config" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label" for="email-address">Email Address</label>
+                                <input type="email" id="email-address" class="form-control" placeholder="you@example.com">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="email-smtp">SMTP Server (optional)</label>
+                                <input type="text" id="email-smtp" class="form-control" placeholder="smtp.gmail.com">
+                                <small>Leave blank to use system default</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="notification-card">
+                        <div class="notification-header">
+                            <input type="checkbox" id="enable-discord" name="notifications" value="discord">
+                            <label for="enable-discord">
+                                <h3>💬 Discord Notifications</h3>
+                                <p>Instant notifications in your Discord server</p>
+                            </label>
+                        </div>
+                        <div class="notification-config" id="discord-config" style="display: none;">
+                            <div class="form-group">
+                                <label class="form-label" for="discord-webhook">Discord Webhook URL</label>
+                                <input type="url" id="discord-webhook" class="form-control" 
+                                       placeholder="https://discord.com/api/webhooks/...">
+                                <small><a href="https://support.discord.com/hc/en-us/articles/228383668" target="_blank">How to create a Discord webhook</a></small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="notification-settings">
+                    <h3>⚙️ Notification Settings</h3>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="notify-price-drops" checked>
+                            Notify on price drops
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="notify-price-increases">
+                            Notify on price increases
+                        </label>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">
+                            <input type="checkbox" id="notify-version-updates" checked>
+                            Notify on version updates
+                        </label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="step-actions">
+                <button class="btn btn-secondary" onclick="prevStep()">
+                    <span class="btn-icon">←</span>
+                    Back
+                </button>
+                <button class="btn btn-primary" onclick="nextStep()">
+                    Continue
+                    <span class="btn-icon">→</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 4: Schedule -->
+        <div class="wizard-step" id="step-4">
+            <div class="step-content">
+                <h2>⏰ Set Up Checking Schedule</h2>
+                <p>How often should we check for changes?</p>
+
+                <div class="schedule-options">
+                    <div class="schedule-card">
+                        <input type="radio" id="schedule-hourly" name="schedule" value="0 * * * *">
+                        <label for="schedule-hourly" class="schedule-label">
+                            <h3>⚡ Every Hour</h3>
+                            <p>Best for time-sensitive deals and frequent changes</p>
+                        </label>
+                    </div>
+
+                    <div class="schedule-card">
+                        <input type="radio" id="schedule-daily" name="schedule" value="0 9 * * *" checked>
+                        <label for="schedule-daily" class="schedule-label">
+                            <h3>📅 Daily (9 AM)</h3>
+                            <p>Recommended - Good balance of freshness and resource usage</p>
+                        </label>
+                    </div>
+
+                    <div class="schedule-card">
+                        <input type="radio" id="schedule-weekly" name="schedule" value="0 9 * * 1">
+                        <label for="schedule-weekly" class="schedule-label">
+                            <h3>📆 Weekly (Monday 9 AM)</h3>
+                            <p>For products that don't change often</p>
+                        </label>
+                    </div>
+
+                    <div class="schedule-card">
+                        <input type="radio" id="schedule-custom" name="schedule" value="custom">
+                        <label for="schedule-custom" class="schedule-label">
+                            <h3>⚙️ Custom Schedule</h3>
+                            <p>Set your own cron expression</p>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="custom-schedule" id="custom-schedule-config" style="display: none;">
+                    <div class="form-group">
+                        <label class="form-label" for="custom-cron">
+                            Cron Expression
+                            <small>Advanced users only - <a href="https://crontab.guru" target="_blank">crontab.guru</a> can help</small>
+                        </label>
+                        <input type="text" id="custom-cron" class="form-control" placeholder="0 9 * * *">
+                    </div>
+                </div>
+
+                <div class="schedule-preview">
+                    <h3>📋 Schedule Preview</h3>
+                    <p id="schedule-description">Your product will be checked daily at 9:00 AM</p>
+                </div>
+            </div>
+            
+            <div class="step-actions">
+                <button class="btn btn-secondary" onclick="prevStep()">
+                    <span class="btn-icon">←</span>
+                    Back
+                </button>
+                <button class="btn btn-primary" onclick="finishSetup()">
+                    Complete Setup
+                    <span class="btn-icon">✓</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 5: Complete -->
+        <div class="wizard-step" id="step-5">
+            <div class="step-content">
+                <div class="completion-message">
+                    <div class="completion-icon">🎉</div>
+                    <h2>Setup Complete!</h2>
+                    <p>Your Uatu Watcher is now configured and ready to start tracking.</p>
+                </div>
+
+                <div class="setup-summary">
+                    <h3>📋 What happens next?</h3>
+                    <ul class="next-steps">
+                        <li>✅ Your first product has been added</li>
+                        <li>✅ Notifications are configured</li>
+                        <li>✅ Checking schedule is set</li>
+                        <li>🔄 First check will run according to your schedule</li>
+                        <li>📧 You'll be notified when changes are detected</li>
+                    </ul>
+                </div>
+
+                <div class="quick-links">
+                    <h3>🔗 Quick Links</h3>
+                    <div class="action-buttons">
+                        <a href="/dashboard" class="btn btn-primary">
+                            <span class="btn-icon">📊</span>
+                            View Dashboard
+                        </a>
+                        <a href="/products" class="btn btn-secondary">
+                            <span class="btn-icon">📦</span>
+                            Manage Products
+                        </a>
+                        <a href="/products/new" class="btn btn-outline">
+                            <span class="btn-icon">➕</span>
+                            Add Another Product
+                        </a>
+                    </div>
+                </div>
+
+                <div class="help-section">
+                    <h3>❓ Need Help?</h3>
+                    <p>Check out our documentation or reach out for support:</p>
+                    <ul>
+                        <li><a href="/docs" target="_blank">📖 Documentation</a></li>
+                        <li><a href="/docs/faq" target="_blank">❓ FAQ</a></li>
+                        <li><a href="https://github.com/yourusername/uatu-watcher" target="_blank">🐛 Report Issues</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="step-actions">
+                <a href="/dashboard" class="btn btn-primary btn-lg">
+                    <span class="btn-icon">🚀</span>
+                    Go to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Element Finder Modal -->
+<div class="modal" id="element-finder-modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>🎯 Element Finder</h3>
+            <button class="modal-close" onclick="closeElementFinder()">&times;</button>
+        </div>
+        <div class="modal-body">
+            <p>This feature will help you select the exact element on the webpage that contains the value you want to track.</p>
+            <div class="form-group">
+                <label class="form-label" for="finder-url">Website URL</label>
+                <input type="url" id="finder-url" class="form-control" readonly>
+            </div>
+            <p class="text-muted">
+                <strong>How it works:</strong><br>
+                1. We'll load the webpage in a safe preview<br>
+                2. You click on the element you want to track<br>
+                3. We'll automatically generate the selector<br>
+                4. You can test it to make sure it works
+            </p>
+            <div class="preview-container">
+                <iframe id="element-finder-preview" style="width: 100%; height: 400px; border: 1px solid #ddd; border-radius: 4px;"></iframe>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" onclick="closeElementFinder()">Cancel</button>
+            <button class="btn btn-primary" onclick="startElementSelection()">Start Selection</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styles %}
+<style>
+    .setup-wizard {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .wizard-progress {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 3rem;
+        padding: 0 2rem;
+    }
+
+    .progress-step {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        position: relative;
+        flex: 1;
+    }
+
+    .progress-step:not(:last-child):after {
+        content: '';
+        position: absolute;
+        top: 20px;
+        left: 60%;
+        right: -40%;
+        height: 2px;
+        background: var(--border-color);
+        z-index: -1;
+    }
+
+    .progress-step.active:not(:last-child):after,
+    .progress-step.completed:not(:last-child):after {
+        background: var(--primary-color);
+    }
+
+    .step-number {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--border-color);
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress-step.active .step-number,
+    .progress-step.completed .step-number {
+        background: var(--primary-color);
+        color: white;
+    }
+
+    .step-label {
+        font-size: 0.875rem;
+        color: var(--text-muted);
+        text-align: center;
+    }
+
+    .progress-step.active .step-label,
+    .progress-step.completed .step-label {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .wizard-step {
+        display: none;
+        background: var(--card-bg);
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 2rem;
+        box-shadow: var(--box-shadow);
+    }
+
+    .wizard-step.active {
+        display: block;
+    }
+
+    .step-content {
+        margin-bottom: 2rem;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+    }
+
+    .feature-list li {
+        padding: 0.5rem 0;
+        font-size: 1.1rem;
+    }
+
+    .setup-tips {
+        background: var(--light-color);
+        border-left: 4px solid var(--info-color);
+        padding: 1rem;
+        margin-top: 2rem;
+        border-radius: 0 var(--border-radius) var(--border-radius) 0;
+    }
+
+    .setup-tips h3 {
+        margin-top: 0;
+        color: var(--info-color);
+    }
+
+    .source-section {
+        background: var(--light-color);
+        padding: 1.5rem;
+        border-radius: var(--border-radius);
+        margin-top: 1.5rem;
+    }
+
+    .notification-options {
+        display: grid;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .notification-card {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        padding: 1rem;
+    }
+
+    .notification-header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+
+    .notification-header input[type="checkbox"] {
+        margin-top: 0.25rem;
+    }
+
+    .notification-header label {
+        flex: 1;
+        cursor: pointer;
+    }
+
+    .notification-header h3 {
+        margin: 0 0 0.5rem 0;
+    }
+
+    .notification-header p {
+        margin: 0;
+        color: var(--text-muted);
+    }
+
+    .notification-config {
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .schedule-options {
+        display: grid;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .schedule-card {
+        border: 1px solid var(--border-color);
+        border-radius: var(--border-radius);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .schedule-card input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .schedule-label {
+        display: block;
+        padding: 1rem;
+        cursor: pointer;
+        transition: var(--transition);
+    }
+
+    .schedule-card input[type="radio"]:checked + .schedule-label {
+        background: var(--primary-color);
+        color: white;
+        border-color: var(--primary-color);
+    }
+
+    .schedule-label h3 {
+        margin: 0 0 0.5rem 0;
+    }
+
+    .schedule-label p {
+        margin: 0;
+        opacity: 0.8;
+    }
+
+    .custom-schedule {
+        background: var(--light-color);
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 1rem;
+    }
+
+    .schedule-preview {
+        background: var(--light-color);
+        padding: 1rem;
+        border-radius: var(--border-radius);
+        border-left: 4px solid var(--success-color);
+    }
+
+    .schedule-preview h3 {
+        margin-top: 0;
+        color: var(--success-color);
+    }
+
+    .step-actions {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding-top: 2rem;
+        border-top: 1px solid var(--border-color);
+    }
+
+    .step-actions .btn {
+        min-width: 120px;
+    }
+
+    .completion-message {
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .completion-icon {
+        font-size: 4rem;
+        margin-bottom: 1rem;
+    }
+
+    .setup-summary, .quick-links, .help-section {
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: var(--light-color);
+        border-radius: var(--border-radius);
+    }
+
+    .next-steps {
+        list-style: none;
+        padding: 0;
+    }
+
+    .next-steps li {
+        padding: 0.5rem 0;
+        font-size: 1.1rem;
+    }
+
+    .preview-container {
+        margin-top: 1rem;
+    }
+
+    @media (max-width: 768px) {
+        .wizard-progress {
+            padding: 0 1rem;
+        }
+        
+        .progress-step {
+            font-size: 0.875rem;
+        }
+        
+        .step-number {
+            width: 30px;
+            height: 30px;
+            font-size: 0.875rem;
+        }
+        
+        .wizard-step {
+            padding: 1rem;
+        }
+        
+        .step-actions {
+            flex-direction: column;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let currentStep = 1;
+    const maxSteps = 5;
+
+    function updateProgress() {
+        document.querySelectorAll('.progress-step').forEach((step, index) => {
+            const stepNumber = index + 1;
+            if (stepNumber < currentStep) {
+                step.classList.add('completed');
+                step.classList.remove('active');
+            } else if (stepNumber === currentStep) {
+                step.classList.add('active');
+                step.classList.remove('completed');
+            } else {
+                step.classList.remove('active', 'completed');
+            }
+        });
+
+        document.querySelectorAll('.wizard-step').forEach((step, index) => {
+            const stepNumber = index + 1;
+            if (stepNumber === currentStep) {
+                step.classList.add('active');
+            } else {
+                step.classList.remove('active');
+            }
+        });
+    }
+
+    function nextStep() {
+        if (currentStep < maxSteps) {
+            currentStep++;
+            updateProgress();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function prevStep() {
+        if (currentStep > 1) {
+            currentStep--;
+            updateProgress();
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function validateAndNextStep() {
+        const form = document.getElementById('product-form');
+        if (form.checkValidity()) {
+            nextStep();
+        } else {
+            form.reportValidity();
+        }
+    }
+
+    async function finishSetup() {
+        const button = event.target;
+        const originalText = button.innerHTML;
+        
+        button.innerHTML = '<span class="loading-spinner">Setting up...</span>';
+        button.disabled = true;
+
+        try {
+            await setupProduct();
+            nextStep();
+        } catch (error) {
+            UatuWatcher.FlashMessages.error('Setup failed: ' + error.message);
+        } finally {
+            button.innerHTML = originalText;
+            button.disabled = false;
+        }
+    }
+
+    async function setupProduct() {
+        // Simulate API calls to create the product
+        const productData = {
+            name: document.getElementById('product-name').value,
+            description: document.getElementById('product-description').value,
+            tracker_type: document.getElementById('tracker-type').value,
+            sources: [{
+                url: document.getElementById('source-url').value,
+                store_name: document.getElementById('source-name').value,
+                selector: document.getElementById('selector-hint').value || null
+            }],
+            schedule: getSelectedSchedule(),
+            notifications: getNotificationConfig()
+        };
+
+        // This would normally make API calls to create the product
+        console.log('Creating product:', productData);
+        
+        // Simulate delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Store completion in localStorage
+        UatuWatcher.Storage.set('setup_completed', true);
+    }
+
+    function getSelectedSchedule() {
+        const selectedSchedule = document.querySelector('input[name="schedule"]:checked');
+        if (selectedSchedule && selectedSchedule.value === 'custom') {
+            return document.getElementById('custom-cron').value || '0 9 * * *';
+        }
+        return selectedSchedule ? selectedSchedule.value : '0 9 * * *';
+    }
+
+    function getNotificationConfig() {
+        const config = {};
+        
+        if (document.getElementById('enable-email').checked) {
+            config.email = {
+                address: document.getElementById('email-address').value,
+                smtp_server: document.getElementById('email-smtp').value
+            };
+        }
+        
+        if (document.getElementById('enable-discord').checked) {
+            config.discord = {
+                webhook_url: document.getElementById('discord-webhook').value
+            };
+        }
+        
+        config.settings = {
+            notify_price_drops: document.getElementById('notify-price-drops').checked,
+            notify_price_increases: document.getElementById('notify-price-increases').checked,
+            notify_version_updates: document.getElementById('notify-version-updates').checked
+        };
+        
+        return config;
+    }
+
+    function openElementFinder() {
+        const url = document.getElementById('source-url').value;
+        if (!url) {
+            UatuWatcher.FlashMessages.error('Please enter a website URL first');
+            return;
+        }
+        
+        document.getElementById('finder-url').value = url;
+        document.getElementById('element-finder-modal').style.display = 'flex';
+    }
+
+    function closeElementFinder() {
+        document.getElementById('element-finder-modal').style.display = 'none';
+    }
+
+    function startElementSelection() {
+        UatuWatcher.FlashMessages.info('Element selection would open here in a real implementation');
+        closeElementFinder();
+    }
+
+    // Event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+        // Notification toggles
+        document.getElementById('enable-email').addEventListener('change', function() {
+            document.getElementById('email-config').style.display = this.checked ? 'block' : 'none';
+        });
+
+        document.getElementById('enable-discord').addEventListener('change', function() {
+            document.getElementById('discord-config').style.display = this.checked ? 'block' : 'none';
+        });
+
+        // Schedule selection
+        document.querySelectorAll('input[name="schedule"]').forEach(radio => {
+            radio.addEventListener('change', function() {
+                document.getElementById('custom-schedule-config').style.display = 
+                    this.value === 'custom' ? 'block' : 'none';
+                updateScheduleDescription();
+            });
+        });
+
+        // Auto-fill store name from URL
+        document.getElementById('source-url').addEventListener('blur', function() {
+            const url = this.value;
+            const storeNameField = document.getElementById('source-name');
+            
+            if (url && !storeNameField.value) {
+                try {
+                    const hostname = new URL(url).hostname;
+                    const storeName = hostname.replace('www.', '').split('.')[0];
+                    storeNameField.value = storeName.charAt(0).toUpperCase() + storeName.slice(1);
+                } catch {
+                    // Invalid URL, ignore
+                }
+            }
+        });
+
+        updateScheduleDescription();
+    });
+
+    function updateScheduleDescription() {
+        const selectedSchedule = document.querySelector('input[name="schedule"]:checked');
+        const description = document.getElementById('schedule-description');
+        
+        if (!selectedSchedule) return;
+        
+        const scheduleTexts = {
+            '0 * * * *': 'Your product will be checked every hour',
+            '0 9 * * *': 'Your product will be checked daily at 9:00 AM',
+            '0 9 * * 1': 'Your product will be checked weekly on Mondays at 9:00 AM',
+            'custom': 'Your product will be checked according to your custom schedule'
+        };
+        
+        description.textContent = scheduleTexts[selectedSchedule.value] || scheduleTexts.custom;
+    }
+</script>
+{% endblock %}

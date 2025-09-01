@@ -25,6 +25,12 @@ pub struct PriceTracker {
     locale_currency_map: HashMap<String, String>,
 }
 
+impl Default for PriceTracker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl PriceTracker {
     pub fn new() -> Self {
         Self::with_default_currency("AUD")
@@ -262,12 +268,10 @@ impl TrackerPlugin for PriceTracker {
         let new_amount = new_value.get("amount").and_then(|v| v.as_str())
             .and_then(|s| Decimal::from_str(s).ok()).unwrap_or_default();
             
-        let change_type = if new_amount > old_amount {
-            ChangeType::Increased
-        } else if new_amount < old_amount {
-            ChangeType::Decreased
-        } else {
-            ChangeType::Unchanged
+        let change_type = match new_amount.cmp(&old_amount) {
+            std::cmp::Ordering::Greater => ChangeType::Increased,
+            std::cmp::Ordering::Less => ChangeType::Decreased,
+            std::cmp::Ordering::Equal => ChangeType::Unchanged,
         };
         
         let difference = new_amount - old_amount;

@@ -476,10 +476,7 @@ mod tests {
             config.clone()
         ));
 
-        match ProductScheduler::new(product_manager, config.scheduler).await {
-            Ok(scheduler) => Some(scheduler),
-            Err(_) => None,
-        }
+        (ProductScheduler::new(product_manager, config.scheduler).await).ok()
     }
 
     fn create_test_product() -> Product {

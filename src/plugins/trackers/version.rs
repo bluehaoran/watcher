@@ -36,11 +36,14 @@ impl Version {
         }
     }
     
-    fn to_string(&self) -> String {
+}
+
+impl std::fmt::Display for Version {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(pre) = &self.pre_release {
-            format!("{}.{}.{}-{}", self.major, self.minor, self.patch, pre)
+            write!(f, "{}.{}.{}-{}", self.major, self.minor, self.patch, pre)
         } else {
-            format!("{}.{}.{}", self.major, self.minor, self.patch)
+            write!(f, "{}.{}.{}", self.major, self.minor, self.patch)
         }
     }
 }
@@ -76,6 +79,12 @@ impl Ord for Version {
 
 pub struct VersionTracker {
     version_regex: Regex,
+}
+
+impl Default for VersionTracker {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl VersionTracker {

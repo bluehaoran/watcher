@@ -12,6 +12,12 @@ pub struct NumberTracker {
     number_regex: Regex,
 }
 
+impl Default for NumberTracker {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl NumberTracker {
     pub fn new() -> Self {
         NumberTracker {

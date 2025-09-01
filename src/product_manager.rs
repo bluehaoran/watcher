@@ -422,7 +422,7 @@ impl ProductManager {
         true
     }
 
-    pub async fn get_product_stats(&self, product_id: &str) -> Result<ProductStats> {
+    pub async fn get_product_stats(&self, _product_id: &str) -> Result<ProductStats> {
         // In a real implementation, this would query the database
         // For now, return mock stats
         Ok(ProductStats {

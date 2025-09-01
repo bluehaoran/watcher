@@ -136,7 +136,7 @@ impl AppConfig {
             return Err(ConfigError::Message("Server port must be greater than 0".into()));
         }
 
-        if let Err(_) = Url::parse(&self.server.base_url) {
+        if Url::parse(&self.server.base_url).is_err() {
             return Err(ConfigError::Message("Invalid base URL format".into()));
         }
 
@@ -385,7 +385,7 @@ mod tests {
     }
 
     #[test]
-    fn test_from_env_with_chrome_path() {
+    unsafe fn test_from_env_with_chrome_path() {
         // Set environment variable
         env::set_var("CHROME_PATH", "/usr/bin/chromium");
         

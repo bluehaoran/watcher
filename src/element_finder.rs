@@ -482,10 +482,10 @@ impl ElementFinder {
                     }
 
                     // Fallback to nth-child
-                    let parent = first_element.parent().and_then(|p| ElementRef::wrap(p));
+                    let parent = first_element.parent().and_then(ElementRef::wrap);
                     if let Some(parent_element) = parent {
                         let siblings: Vec<ElementRef> = parent_element.children()
-                            .filter_map(|node| ElementRef::wrap(node))
+                            .filter_map(ElementRef::wrap)
                             .filter(|el| el.value().name() == first_element.value().name())
                             .collect();
                         

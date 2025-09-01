@@ -1,15 +1,7 @@
-# Multi-stage Rust build
-FROM rust:1.75-alpine AS chef
-RUN apk add --no-cache musl-dev pkgconfig openssl-dev
-RUN cargo install cargo-chef
-WORKDIR /app
+# Multi-stage Rust build  
+FROM rust:1.89-alpine AS builder
 
-FROM chef AS planner
-COPY . .
-RUN cargo chef prepare --recipe-path recipe.json
-
-# Build stage
-FROM chef AS builder
+# Install build dependencies
 RUN apk add --no-cache \
     musl-dev \
     pkgconfig \
@@ -22,8 +14,7 @@ RUN apk add --no-cache \
     ca-certificates \
     ttf-freefont
 
-COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --release --recipe-path recipe.json
+WORKDIR /app
 
 # Copy source code and build
 COPY . .

@@ -1,7 +1,8 @@
 [package]
 name = "uatu-watcher"
 version = "0.1.0"
-edition = "2021"
+edition = "2024"
+rust-version = "1.86"
 authors = ["Haoran Un <haoransblue@gmail.com>"]
 description = "Price/version/number tracking application"
 license = "GPLv3"

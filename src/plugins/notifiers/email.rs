@@ -1,15 +1,12 @@
 use crate::plugins::traits::{
     NotifierPlugin, NotificationEvent, NotificationResult, ConfigSchema, ChangeType,
 };
-use crate::plugins::traits::notifier::*;
 use crate::plugins::traits::tracker::{ConfigField, ConfigFieldType};
 use async_trait::async_trait;
 use lettre::message::{header, MultiPart, SinglePart};
 use lettre::transport::smtp::authentication::Credentials;
 use lettre::{Message, SmtpTransport, Transport};
 use serde_json::json;
-use uuid::Uuid;
-use chrono::Utc;
 
 #[derive(Debug, Clone)]
 pub struct EmailConfig {
@@ -66,6 +63,12 @@ impl EmailConfig {
 
 pub struct EmailNotifier {
     config: Option<EmailConfig>,
+}
+
+impl Default for EmailNotifier {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl EmailNotifier {
@@ -166,7 +169,7 @@ impl EmailNotifier {
     fn format_text_body(&self, event: &NotificationEvent) -> String {
         let mut text = String::new();
         
-        text.push_str(&format!("🔔 UATU WATCHER ALERT\n\n"));
+        text.push_str("🔔 UATU WATCHER ALERT\n\n");
         text.push_str(&format!("Product: {}\n", event.product.name));
         text.push_str(&format!("Change: {} → {}\n", event.formatted_old, event.formatted_new));
         text.push_str(&format!("Difference: {}\n\n", event.difference));
@@ -381,6 +384,8 @@ impl NotifierPlugin for EmailNotifier {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::plugins::traits::notifier::{ProductInfo, SourceInfo, ComparisonInfo, BestDealInfo, SavingsInfo, ThresholdInfo, ActionUrls, ThresholdType};
+    use uuid::Uuid;
 
     fn create_test_event() -> NotificationEvent {
         NotificationEvent {

@@ -1,5 +1,4 @@
 use axum::{
-    body::Body,
     extract::Request,
     http::{HeaderMap, StatusCode},
     middleware::Next,
@@ -213,14 +212,12 @@ fn extract_client_ip(headers: &HeaderMap) -> String {
 }
 
 #[cfg(test)]
-#[ignore] // TODO: Fix test structure after refactoring
 mod tests {
     use super::*;
     use axum::{
         body::Body,
         http::{Method, Request, StatusCode},
         response::Response,
-        middleware::Next,
     };
 
     // Mock next function for testing
@@ -254,7 +251,7 @@ mod tests {
     async fn test_security_headers() {
         // For now, just test the headers are added correctly by checking the function exists
         // Full integration testing will be done in the web module tests
-        let request = Request::builder()
+        let _request = Request::builder()
             .method(Method::GET)
             .uri("/")
             .body(Body::empty())

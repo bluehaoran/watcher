@@ -1,13 +1,10 @@
 use crate::plugins::traits::{
     NotifierPlugin, NotificationEvent, NotificationResult, ConfigSchema, ChangeType,
 };
-use crate::plugins::traits::notifier::*;
 use crate::plugins::traits::tracker::{ConfigField, ConfigFieldType};
 use async_trait::async_trait;
 use reqwest::Client;
 use serde_json::json;
-use uuid::Uuid;
-use chrono::Utc;
 
 #[derive(Debug, Clone)]
 pub struct DiscordConfig {
@@ -53,6 +50,12 @@ impl DiscordConfig {
 
 pub struct DiscordNotifier {
     client: Client,
+}
+
+impl Default for DiscordNotifier {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl DiscordNotifier {
@@ -201,7 +204,7 @@ impl NotifierPlugin for DiscordNotifier {
             mention_user: None,
         };
         
-        let payload = self.create_webhook_payload(event, &config);
+        let _payload = self.create_webhook_payload(event, &config);
         
         // For actual implementation, we would send the webhook request:
         // let response = self.client
@@ -223,7 +226,7 @@ impl NotifierPlugin for DiscordNotifier {
             .map_err(|e| format!("Invalid Discord configuration: {}", e))?;
         
         // Test webhook by sending a simple test message
-        let test_payload = json!({
+        let _test_payload = json!({
             "content": "🧪 Uatu Watcher connection test",
             "username": discord_config.username.unwrap_or_else(|| "Uatu Watcher".to_string())
         });
@@ -300,6 +303,8 @@ impl NotifierPlugin for DiscordNotifier {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::plugins::traits::notifier::{ProductInfo, SourceInfo, ComparisonInfo, BestDealInfo, SavingsInfo, ThresholdInfo, ActionUrls, ThresholdType};
+    use uuid::Uuid;
 
     fn create_test_event() -> NotificationEvent {
         NotificationEvent {

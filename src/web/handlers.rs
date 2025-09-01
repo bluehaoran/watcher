@@ -1,13 +1,11 @@
 use axum::{
     extract::{Path, Query, State},
-    http::StatusCode,
     response::Json,
 };
 use serde_json::Value;
-use std::str::FromStr;
 
 use crate::{
-    models::{Product, NewProduct, TrackerType, NotifyOn, ThresholdType},
+    models::Product,
     ProductRequest, ProductUpdate, ProductCheckResult, ProductStats,
     JobInfo, SchedulerStats,
 };
@@ -62,7 +60,7 @@ pub async fn create_product(
     
     // Validate URLs
     for source in &request.sources {
-        if let Err(_) = url::Url::parse(&source.url) {
+        if url::Url::parse(&source.url).is_err() {
             return Err(AppError::bad_request(format!("Invalid URL: {}", source.url)));
         }
     }
@@ -316,7 +314,7 @@ pub async fn schedule_product(
         return Err(AppError::bad_request("Product must have a check interval to be scheduled"));
     }
 
-    let mut scheduler = state.scheduler.lock().await;
+    let scheduler = state.scheduler.lock().await;
     match scheduler.schedule_product(&product).await {
         Ok(()) => {
             tracing::info!("Scheduled product: {} ({})", product.name, id);
@@ -337,7 +335,7 @@ pub async fn unschedule_product(
         return Err(AppError::bad_request("Product ID is required"));
     }
 
-    let mut scheduler = state.scheduler.lock().await;
+    let scheduler = state.scheduler.lock().await;
     match scheduler.unschedule_product(&id).await {
         Ok(()) => {
             tracing::info!("Unscheduled product: {}", id);
@@ -415,7 +413,7 @@ pub async fn pause_job(
         return Err(AppError::bad_request("Product ID is required"));
     }
 
-    let mut scheduler = state.scheduler.lock().await;
+    let scheduler = state.scheduler.lock().await;
     match scheduler.pause_job(&product_id).await {
         Ok(()) => {
             tracing::info!("Paused job for product: {}", product_id);
@@ -436,7 +434,7 @@ pub async fn resume_job(
         return Err(AppError::bad_request("Product ID is required"));
     }
 
-    let mut scheduler = state.scheduler.lock().await;
+    let scheduler = state.scheduler.lock().await;
     match scheduler.resume_job(&product_id).await {
         Ok(()) => {
             tracing::info!("Resumed job for product: {}", product_id);
@@ -482,7 +480,7 @@ pub async fn system_info(
 }
 
 pub async fn system_metrics(
-    State(state): State<AppState>,
+    State(_state): State<AppState>,
 ) -> Result<Json<ApiResponse<Value>>, AppError> {
     // In a full implementation, this would collect real metrics from system monitors
     let metrics = serde_json::json!({
@@ -679,4 +677,50 @@ pub async fn get_product_health(
 
     tracing::debug!("Retrieved health check for product: {}", id);
     Ok(Json(ApiResponse::success(health)))
+}
+
+// Page handlers for web UI
+
+use axum::response::Html;
+
+/// GET /setup - Setup wizard page
+pub async fn setup_page() -> Result<Html<String>, AppError> {
+    let setup_template = include_str!("../../templates/setup.html");
+    Ok(Html(setup_template.to_string()))
+}
+
+/// GET /dashboard - Dashboard page  
+pub async fn dashboard_page() -> Result<Html<String>, AppError> {
+    let dashboard_template = include_str!("../../templates/dashboard.html");
+    Ok(Html(dashboard_template.to_string()))
+}
+
+/// GET /products - Products management page
+pub async fn products_page() -> Result<Html<String>, AppError> {
+    let template = r#"
+    {% extends "base.html" %}
+    {% block title %}Products - Uatu Watcher{% endblock %}
+    {% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Products</h1>
+        <p class="page-description">Manage your tracked products and sources</p>
+    </div>
+    {% endblock %}
+    "#;
+    Ok(Html(template.to_string()))
+}
+
+/// GET /scheduler - Scheduler management page
+pub async fn scheduler_page() -> Result<Html<String>, AppError> {
+    let template = r#"
+    {% extends "base.html" %}
+    {% block title %}Scheduler - Uatu Watcher{% endblock %}
+    {% block content %}
+    <div class="page-header">
+        <h1 class="page-title">Scheduler</h1>
+        <p class="page-description">Manage automated checking schedules</p>
+    </div>
+    {% endblock %}
+    "#;
+    Ok(Html(template.to_string()))
 }

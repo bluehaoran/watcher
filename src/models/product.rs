@@ -177,11 +177,7 @@ impl Product {
                 // For structured values like prices, extract the numeric component
                 if let Some(amount) = obj.get("amount").and_then(|v| v.as_str()) {
                     amount.parse().ok()
-                } else if let Some(number) = obj.get("number").and_then(|v| v.as_f64()) {
-                    Some(number)
-                } else {
-                    None
-                }
+                } else { obj.get("number").and_then(|v| v.as_f64()) }
             },
             _ => None,
         }

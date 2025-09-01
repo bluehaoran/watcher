@@ -2,7 +2,7 @@ use axum::{
     extract::{Path, State},
     http::StatusCode,
     response::{Html, Json},
-    routing::{get, post, put, delete},
+    routing::{get, post},
     Router,
 };
 use serde::{Deserialize, Serialize};
@@ -33,6 +33,8 @@ pub use handlers::{
     get_job_info, pause_job, resume_job,
     // System handlers
     system_info, system_metrics,
+    // Page handlers
+    setup_page, dashboard_page, products_page, scheduler_page,
 };
 pub use responses::*;
 
@@ -74,8 +76,9 @@ pub fn create_router(state: AppState) -> Router {
         .nest("/api/v1", api_routes())
         
         // Dashboard routes (will serve HTML)
-        .route("/", get(dashboard))
-        .route("/dashboard", get(dashboard))
+        .route("/", get(dashboard_page))
+        .route("/dashboard", get(dashboard_page))
+        .route("/setup", get(setup_page))
         .route("/products", get(products_page))
         .route("/products/new", get(new_product_page))
         .route("/products/:id", get(product_detail_page))
@@ -187,18 +190,6 @@ async fn dashboard(State(_state): State<AppState>) -> Result<Html<String>, Statu
 }
 
 // Product pages (placeholders)
-async fn products_page() -> Html<&'static str> {
-    Html(r#"
-    <html>
-    <head><title>Products - Uatu Watcher</title></head>
-    <body>
-        <h1>Products</h1>
-        <p>Product management interface will be implemented here.</p>
-        <p><a href="/">← Back to Dashboard</a></p>
-    </body>
-    </html>
-    "#)
-}
 
 async fn new_product_page() -> Html<&'static str> {
     Html(r#"
@@ -239,18 +230,6 @@ async fn edit_product_page(Path(id): Path<String>) -> Html<String> {
     "#, id, id, id))
 }
 
-async fn scheduler_page() -> Html<&'static str> {
-    Html(r#"
-    <html>
-    <head><title>Scheduler - Uatu Watcher</title></head>
-    <body>
-        <h1>Scheduler</h1>
-        <p>Scheduler management interface will be implemented here.</p>
-        <p><a href="/">← Back to Dashboard</a></p>
-    </body>
-    </html>
-    "#)
-}
 
 async fn settings_page() -> Html<&'static str> {
     Html(r#"
@@ -265,10 +244,25 @@ async fn settings_page() -> Html<&'static str> {
     "#)
 }
 
-async fn serve_static(Path(file): Path<String>) -> Result<&'static str, StatusCode> {
+use axum::response::{Response, IntoResponse};
+use axum::http::header;
+
+async fn serve_static(Path(file): Path<String>) -> Result<Response, StatusCode> {
     match file.as_str() {
-        "style.css" => Ok("/* CSS styles will be implemented here */"),
-        "app.js" => Ok("// JavaScript will be implemented here"),
+        "css/style.css" => {
+            let css_content = include_str!("../../static/css/style.css");
+            Ok((
+                [(header::CONTENT_TYPE, "text/css")],
+                css_content
+            ).into_response())
+        },
+        "js/app.js" => {
+            let js_content = include_str!("../../static/js/app.js");
+            Ok((
+                [(header::CONTENT_TYPE, "application/javascript")],
+                js_content
+            ).into_response())
+        },
         _ => Err(StatusCode::NOT_FOUND),
     }
 }
